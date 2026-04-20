@@ -470,47 +470,51 @@
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                 recognition = new SpeechRecognition();
                 recognition.lang = 'zh-CN';
-                recognition.continuous = true;
-                recognition.interimResults = true;
+                // ⚠️ 极其关键：必须是 false！关闭连续识别，说完立刻出结果，防止 Chrome 死锁
+                recognition.continuous = false;
+                // 关闭临时结果，减轻网络负担
+                recognition.interimResults = false;
 
                 recognition.onresult = function(event) {
-                    let transcript = '';
-                    for (let i = event.resultIndex; i < event.results.length; i++) {
-                        if (event.results[i].isFinal) {
-                            transcript += event.results[i][0].transcript;
-                        }
-                    }
+                    let transcript = event.results[0][0].transcript;
                     if (transcript) {
                         console.log("识别到语音:", transcript);
                         addMessage('user', transcript);
                         sendToLLM(transcript);
-                        // 核心：识别到一次结果后立即强制停止，触发 Chrome 的发送流程
-                        recognition.stop();
                     }
                 };
 
                 recognition.onstart = function() {
-                    window.isActuallyRecording = true; // 新增安全锁：真正开始录音了
+                    console.log("麦克风已成功激活！");
+                    window.isActuallyRecording = true;
                     document.getElementById('status-tip').textContent = '正在聆听...';
                     document.getElementById('btn-speak').classList.add('recording');
                 };
 
                 recognition.onend = function() {
                     isRecording = false;
-                    window.isActuallyRecording = false; // 重置安全锁
+                    window.isActuallyRecording = false;
                     document.getElementById('status-tip').textContent = '等待语音输入...';
                     document.getElementById('btn-speak').classList.remove('recording');
                 };
 
                 recognition.onerror = function(event) {
-                    console.error('语音识别错误:', event.error);
+                    console.error('语音识别被拦截，原因:', event.error);
                     isRecording = false;
-                    document.getElementById('status-tip').textContent = '等待语音输入...';
+                    window.isActuallyRecording = false;
+                    
+                    // 把错误原因直接显示在网页上，方便排查
+                    let errorTip = '未听到声音，请重试';
+                    if(event.error === 'not-allowed') errorTip = '❌ 麦克风权限被拒绝！请在浏览器地址栏允许';
+                    if(event.error === 'network') errorTip = '❌ 网络连接失败(请尝试关闭/切换代理模式)';
+                    if(event.error === 'no-speech') errorTip = '没听到声音哦，请大声点';
+                    
+                    document.getElementById('status-tip').textContent = errorTip;
                     document.getElementById('btn-speak').classList.remove('recording');
                 };
             } else {
                 console.error('您的浏览器不支持语音识别功能');
-                document.getElementById('status-tip').textContent = '浏览器不支持语音识别';
+                document.getElementById('status-tip').textContent = '当前浏览器不支持语音识别';
             }
         }
 
