@@ -173,19 +173,19 @@
             display: flex;
             flex-direction: column;
             gap: 20px;
-            height: 100%; /* 让交互区严格等于左侧 3D 舞台的高度 */
-            min-height: 0; /* 核心：防止 Flex 子元素撑破网格布局 */
+            height: 100%;
+            min-height: 0;
         }
 
         .chat-window {
             flex: 1;
             padding: 24px;
-            overflow-y: auto; /* 允许纵向滚动 */
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 16px;
-            min-height: 0; /* 核心：强制在这个层级触发滚动条，而不是撑长父元素 */
-            scroll-behavior: smooth; /* 让滚动更加平滑自然 */
+            min-height: 0;
+            scroll-behavior: smooth;
         }
 
         .message {
@@ -354,7 +354,6 @@
         <main class="main-content">
             <section class="avatar-section">
                 <div class="canvas-wrapper glass-panel" id="canvas-container">
-                    <!-- Three.js 3D 数字人将在此渲染 -->
                     <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--primary-red); font-size: 18px; opacity: 0.7;">
                         3D 数字人展示区
                     </div>
@@ -427,7 +426,6 @@
                 ];
 
                 // --- 核心修改：前端不再直连大模型，而是请求自己的后端接口 ---
-                // 注意：这里不再需要写 API_URL 和 API_KEY 了！
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: {
@@ -442,7 +440,7 @@
 
                 const data = await response.json();
                 
-                // 注意：由于后端直接转发了智谱的格式，所以这里提取回答的代码不用变
+                // 提取回答
                 const assistantReply = data.choices[0].message.content;
                 // 4. 将大模型的回答也加入记忆
                 conversationHistory.push({ role: 'assistant', content: assistantReply });
@@ -523,7 +521,7 @@
                 window.speechSynthesis.resume();
 
                 const utterance = new SpeechSynthesisUtterance(text);
-                // 强制压低音调，增强男性特征（关键修改：从0.9改为0.7）
+                // 强制压低音调，增强男性特征
                 utterance.pitch = 0.7;
                 utterance.rate = 1.0;
 
@@ -565,7 +563,7 @@
                     window.speechSynthesis.speak(utterance);
                 };
 
-                // 解决浏览器异步加载语音包的 Bug：如果声音列表为空，则等待加载完成再播放
+                // 解决浏览器异步加载语音包的 Bug
                 if (window.speechSynthesis.getVoices().length === 0) {
                     window.speechSynthesis.onvoiceschanged = () => {
                         setVoiceAndSpeak();
@@ -631,7 +629,7 @@
             }
         }
 
-        // 1. 只保留极其安全的 click 事件，彻底移除 mousedown/mouseup/touchstart/touchend
+        // 1. 只保留极其安全的 click 事件
         btnSpeak.addEventListener('click', toggleRecord);
 
         // 2. 重新朗读按钮事件保持不变
@@ -749,7 +747,7 @@
                 if (controls) controls.update();
                 if (currentVrm) currentVrm.update(deltaTime);
                 
-                // 自动眨眼逻辑（修复闭眼卡死Bug）
+                // 自动眨眼逻辑
                 if (currentVrm && currentVrm.expressionManager) {
                     const blinkValue = Math.max(0, Math.sin(Date.now() * 0.002) - 0.9) * 10;
                     currentVrm.expressionManager.setValue('blink', Math.min(1, blinkValue));
@@ -774,48 +772,42 @@
                     const mouthOpenness = isSpeaking ? Math.abs(Math.sin(time * 8.0)) * 0.6 : 0;
                     currentVrm.expressionManager.setValue('aa', mouthOpenness);
 
-                    // 3. 肢体手势生成（升级为多姿态随机状态机）
+                    // 肢体手势生成
                     const rightUpper = currentVrm.humanoid.getNormalizedBoneNode('rightUpperArm');
                     const rightLower = currentVrm.humanoid.getNormalizedBoneNode('rightLowerArm');
                     const leftUpper = currentVrm.humanoid.getNormalizedBoneNode('leftUpperArm');
                     const leftLower = currentVrm.humanoid.getNormalizedBoneNode('leftLowerArm');
                     const head = currentVrm.humanoid.getNormalizedBoneNode('head');
 
-                    // 初始化手势状态机变量
                     if (typeof window.gestureState === 'undefined') {
-                        window.gestureState = 0; // 0:待机, 1:右手讲解, 2:左手讲解, 3:双手强调
+                        window.gestureState = 0; 
                         window.gestureTimer = 0;
-                        // 记录当前的平滑插值角度
                         window.curRU_Z = 1.2; window.curRU_X = 0; window.curRL_Z = 0; window.curRL_X = 0;
                         window.curLU_Z = -1.2; window.curLU_X = 0; window.curLL_Z = 0; window.curLL_X = 0;
                     }
 
-                    // 每 2 到 4 秒随机切换一次动作
                     if (isSpeaking) {
                         window.gestureTimer -= deltaTime;
                         if (window.gestureTimer <= 0) {
-                            window.gestureState = Math.floor(Math.random() * 3) + 1; // 随机抽取 1, 2, 3
-                            window.gestureTimer = 2.0 + Math.random() * 2.0; // 维持该动作 2-4 秒
+                            window.gestureState = Math.floor(Math.random() * 3) + 1; 
+                            window.gestureTimer = 2.0 + Math.random() * 2.0; 
                         }
                     } else {
-                        window.gestureState = 0; // 不说话时强制归零待机
+                        window.gestureState = 0; 
                     }
 
-                    // 设定目标姿态 (默认待机下垂)
                     let tarRU_Z = 1.2, tarRU_X = 0, tarRL_Z = 0, tarRL_X = 0;
                     let tarLU_Z = -1.2, tarLU_X = 0, tarLL_Z = 0, tarLL_X = 0;
 
-                    // 根据状态机分配不同的动作角度
-                    if (window.gestureState === 1) { // 右手讲解
+                    if (window.gestureState === 1) { 
                         tarRU_Z = 1.05; tarRU_X = -0.3; tarRL_Z = 1.5; tarRL_X = -0.4;
-                    } else if (window.gestureState === 2) { // 左手讲解
+                    } else if (window.gestureState === 2) { 
                         tarLU_Z = -1.05; tarLU_X = -0.3; tarLL_Z = -1.5; tarLL_X = -0.4;
-                    } else if (window.gestureState === 3) { // 双手微抬强调
+                    } else if (window.gestureState === 3) { 
                         tarRU_Z = 1.1; tarRU_X = -0.2; tarRL_Z = 1.2; tarRL_X = -0.3;
                         tarLU_Z = -1.1; tarLU_X = -0.2; tarLL_Z = -1.2; tarLL_X = -0.3;
                     }
 
-                    // 线性插值 (Lerp) 实现多动作之间的丝滑过渡，避免瞬间抽搐
                     const lerpSpeed = 4.0 * deltaTime;
                     window.curRU_Z += (tarRU_Z - window.curRU_Z) * lerpSpeed;
                     window.curRU_X += (tarRU_X - window.curRU_X) * lerpSpeed;
@@ -827,11 +819,9 @@
                     window.curLL_Z += (tarLL_Z - window.curLL_Z) * lerpSpeed;
                     window.curLL_X += (tarLL_X - window.curLL_X) * lerpSpeed;
 
-                    // 叠加细微的呼吸波动，让动作更显鲜活
                     const wave1 = Math.sin(time * 2.5) * 0.05 * window.speakWeight;
                     const wave2 = Math.sin(time * 1.2) * 0.05 * window.speakWeight;
 
-                    // 应用最终算出的角度到真实骨骼
                     if (rightUpper && rightLower && leftUpper && leftLower) {
                         rightUpper.rotation.z = window.curRU_Z + wave1;
                         rightUpper.rotation.x = window.curRU_X + wave2;
@@ -845,10 +835,8 @@
                     }
 
                     if (head) {
-                        // 头部跟随肢体动作方向产生自然的微侧偏转
                         const targetHeadY = window.gestureState === 1 ? -0.08 : (window.gestureState === 2 ? 0.08 : 0);
                         head.rotation.y += (targetHeadY - head.rotation.y) * lerpSpeed;
-                        // 头部点头微动
                         head.rotation.x = (Math.sin(time * 4.0) * 0.02) * window.speakWeight;
                     }
                     
@@ -858,7 +846,6 @@
                 renderer.render(scene, camera);
             }
 
-            // 响应窗口大小变化
             window.addEventListener('resize', function() {
                 const width = container.clientWidth;
                 const height = container.clientHeight;
@@ -876,9 +863,6 @@
         setTimeout(() => {
             const welcomeText = '作为你的专属向导，我已经准备好啦！想听听那些热血沸腾的革命故事，还是了解哪位英雄的传奇人生？\n\n(提示：初次见面，请点击下方“重新朗读”激活我的声音，或直接按住麦克风跟我说话吧！)';
             addMessage('ai', welcomeText);
-            
-            // ⚠️ 核心修复：删除自动执行的 speakText，防止触发浏览器拦截导致引擎卡死
-            // 记录到 lastMessage 中，让用户可以通过点击“重新朗读”按钮来安全触发发声
             lastMessage = welcomeText;
         }, 2000);
 
