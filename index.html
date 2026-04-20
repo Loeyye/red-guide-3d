@@ -377,7 +377,7 @@
                             <svg class="icon" viewBox="0 0 24 24">
                                 <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"></path>
                             </svg>
-                            按住 说话
+                            点击 说话
                         </button>
                         <button class="btn btn-secondary" id="btn-read">
                             <svg class="icon" viewBox="0 0 24 24">
@@ -598,60 +598,43 @@
         const btnSpeak = document.getElementById('btn-speak');
         const btnRead = document.getElementById('btn-read');
 
-        window.isActuallyRecording = false; // 初始安全锁状态
-
-        // 统一处理：开始录音
-        function handleStartRecord(e) {
+        // 统一处理：点击切换录音状态 (Click to Talk)
+        function toggleRecord(e) {
             if (e.cancelable) e.preventDefault();
             
+            // 1. 任何时候点击，先打断正在播放的语音
             if (window.speechSynthesis.speaking) {
                 window.speechSynthesis.cancel();
             }
             isSpeaking = false;
 
-            if (recognition && !isRecording) {
-                isRecording = true; // 标记意图
-                try {
-                    recognition.start();
-                } catch (err) {
-                    console.warn("录音启动过快被拦截，防止崩溃:", err);
-                    isRecording = false;
-                }
-            }
-        }
+            if (!recognition) return;
 
-        // 统一处理：结束录音
-        function handleStopRecord(e) {
-            if (e.cancelable) e.preventDefault();
-            
-            // 只有当真正处于录音中，且底层已经 ready 时，才允许 stop
-            if (recognition && isRecording) {
+            if (isRecording) {
+                // 如果正在录音，再次点击则手动停止
                 try {
-                    if (window.isActuallyRecording) {
-                        recognition.stop();
-                    } else {
-                        // 如果还没完全启动就松开了，使用 abort 直接掐断，比 stop 更安全
-                        recognition.abort();
+                    recognition.stop();
+                } catch (err) {
+                    console.warn("停止异常:", err);
+                }
+            } else {
+                // 如果没有录音，则开启。加入 50ms 延迟，防止与 cancel() 发生底层线程撞车
+                setTimeout(() => {
+                    isRecording = true;
+                    try {
+                        recognition.start();
+                    } catch (err) {
+                        console.warn("启动异常:", err);
+                        isRecording = false;
                     }
-                } catch (err) {
-                    console.warn("停止录音异常被捕获:", err);
-                }
-                isRecording = false;
-                window.isActuallyRecording = false;
+                }, 50);
             }
         }
 
-        // 1. 绑定 PC 端鼠标事件
-        btnSpeak.addEventListener('mousedown', handleStartRecord);
-        document.addEventListener('mouseup', handleStopRecord);
-        document.addEventListener('mouseleave', handleStopRecord);
+        // 1. 只保留极其安全的 click 事件，彻底移除 mousedown/mouseup/touchstart/touchend
+        btnSpeak.addEventListener('click', toggleRecord);
 
-        // 2. 绑定移动端触摸事件
-        btnSpeak.addEventListener('touchstart', handleStartRecord, { passive: false });
-        document.addEventListener('touchend', handleStopRecord, { passive: false });
-        document.addEventListener('touchcancel', handleStopRecord, { passive: false });
-
-        // 3. 重新朗读按钮事件
+        // 2. 重新朗读按钮事件保持不变
         btnRead.addEventListener('click', function(e) {
             if (e.cancelable) e.preventDefault();
             speakText(lastMessage);
