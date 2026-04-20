@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数说红魂 - 人工智能驱动红色叙事的沉浸式传播实践</title>
+    <style>
+        :root {
+            --primary-red: #8b1014;
+            --accent-gold: #d4af37;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --text-main: #2c3e50;
+            --danger-red: #c0392b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        body {
+            background-color: #F9F6F0; /* 温润的宣纸/暖玉底色 */
+            height: 100vh;
+            overflow: hidden;
+            margin: 0;
+        }
+
+        .bg-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                /* 1. 左上角：故宫红微光晕，点题红色文化且不刺眼 */
+                radial-gradient(circle at 10% 10%, rgba(139, 16, 20, 0.12) 0%, transparent 60%),
+                /* 2. 右下角：香槟金光晕，提升整体的高级感与辉煌感 */
+                radial-gradient(circle at 90% 90%, rgba(212, 175, 55, 0.15) 0%, transparent 60%),
+                /* 3. 传统中式织锦/十字暗纹 (纯CSS SVG)，透明度极低，作为质感底纹 */
+                url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%238b1014' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            z-index: -1;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 20px 40px;
+        }
+
+        /* 毛玻璃面板通用 */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+
+        /* 顶部导航栏 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px 30px;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary-red);
+            letter-spacing: 2px;
+        }
+
+        .divider {
+            color: var(--accent-gold);
+            font-size: 24px;
+            font-weight: 300;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: var(--text-main);
+            font-weight: 400;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, var(--accent-gold), #f4d03f);
+            color: #2c3e50;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* 左侧数字人展示区 */
+        .avatar-section {
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .canvas-wrapper {
+            flex: 1;
+            border-radius: 24px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f8f5f0, #f0ebe1);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+        }
+
+        .nameplate {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-main);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nameplate .dot {
+            width: 8px;
+            height: 8px;
+            background-color: #27ae60;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.7;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* 右侧交互区 */
+        .interaction-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 100%; /* 让交互区严格等于左侧 3D 舞台的高度 */
+            min-height: 0; /* 核心：防止 Flex 子元素撑破网格布局 */
+        }
+
+        .chat-window {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto; /* 允许纵向滚动 */
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-height: 0; /* 核心：强制在这个层级触发滚动条，而不是撑长父元素 */
+            scroll-behavior: smooth; /* 让滚动更加平滑自然 */
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 16px 20px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .ai-msg {
+            align-self: flex-start;
+            background: linear-gradient(135deg, #f8f5f0, #f0ebe1);
+            border-top-left-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .user-msg {
+            align-self: flex-end;
+            background: linear-gradient(135deg, var(--primary-red), #a91c1f);
+            color: white;
+            border-top-right-radius: 4px;
+            box-shadow: 0 4px 12px rgba(139, 16, 20, 0.3);
+        }
+
+        .control-panel {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .status-tip {
+            text-align: center;
+            font-size: 14px;
+            color: var(--text-main);
+            opacity: 0.7;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 16px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-red), #a91c1f);
+            color: white;
+            box-shadow: 0 8px 20px rgba(139, 16, 20, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(139, 16, 20, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary.recording {
+            background: linear-gradient(135deg, var(--danger-red), #e74c3c);
+            animation: recordPulse 2s infinite;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f8f5f0, #f0ebe1);
+            color: var(--text-main);
+            border: 1px solid rgba(139, 16, 20, 0.2);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        /* 呼吸动画 */
+        @keyframes recordPulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.7);
+            }
+            50% {
+                transform: scale(1.02);
+                box-shadow: 0 0 0 10px rgba(192, 57, 43, 0);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(192, 57, 43, 0);
+            }
+        }
+
+        /* 图标样式 */
+        .icon {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(139, 16, 20, 0.3);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(139, 16, 20, 0.5);
+        }
+
+        /* 3D 画布容器样式 */
+        #canvas-container {
+            position: relative;
+        }
+        #canvas-container canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+            outline: none;
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.154.0/examples/jsm/",
+                "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@2.0.0/lib/three-vrm.module.js"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="bg-layer"></div>
+    <div class="app-container">
+        <header class="header glass-panel">
+            <div class="logo-area">
+                <span class="logo-text">数说红魂</span>
+                <span class="divider">|</span>
+                <span class="subtitle">人工智能驱动红色叙事的沉浸式传播实践</span>
+            </div>
+            <div class="status-badge">GLM-4 大脑接入正常</div>
+        </header>
+        <main class="main-content">
+            <section class="avatar-section">
+                <div class="canvas-wrapper glass-panel" id="canvas-container">
+                    <!-- Three.js 3D 数字人将在此渲染 -->
+                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--primary-red); font-size: 18px; opacity: 0.7;">
+                        3D 数字人展示区
+                    </div>
+                </div>
+                <div class="nameplate glass-panel">
+                    <span class="dot"></span>
+                    专属数字向导：红七七
+                </div>
+            </section>
+            <section class="interaction-section">
+                <div class="chat-window glass-panel" id="chat-window">
+                        <div class="message ai-msg">
+                        <div class="msg-content">你好呀！我是红七七，很高兴能在数字展厅遇见你！✨</div>
+                    </div>
+                </div>
+                <div class="control-panel glass-panel">
+                    <div class="status-tip" id="status-tip">等待语音输入...</div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="btn-speak">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"></path>
+                            </svg>
+                            按住 说话
+                        </button>
+                        <button class="btn btn-secondary" id="btn-read">
+                            <svg class="icon" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z"></path>
+                            </svg>
+                            重新朗读
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+        import { VRMLoaderPlugin } from '@pixiv/three-vrm';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // 全局变量
+        let isRecording = false;
+        let recognition = null;
+        let lastMessage = "你好呀！我是红七七，很高兴能在数字展厅遇见你！";
+        let conversationHistory = []; // 用于存储多轮对话记忆
+        
+        // 大模型 API 配置
+        const API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+        const API_KEY = '853b555c85704c28955f75a6c0e15e81.f7liXPr5fu2YmqUW';
+
+        // 调用大模型 API
+        async function sendToLLM(userInput) {
+            try {
+                // 1. 将用户的新问题加入记忆
+                conversationHistory.push({ role: 'user', content: userInput });
+
+                // 2. 限制记忆长度，防止突破 Token 限制（保留最近的20条，即10轮对话）
+                if (conversationHistory.length > 20) {
+                    conversationHistory = conversationHistory.slice(conversationHistory.length - 20);
+                }
+
+                // 3. 构建包含完整记忆的消息队列
+                const messagesPayload = [
+                    {
+                        role: 'system',
+                        content: '【角色设定】\n你是一位专业、热情、知识渊博的"红色文化数字讲解员"。你的名字叫"红七七"。\n\n【表达风格】\n1. 严谨与生动：涉及历史事件必须绝对准确。请用讲故事的口吻娓娓道来，每次回答的字数控制在 150 到 250 字左右，内容要详实丰满。\n2. 主动互动（极度重要）：在每一次回答的结尾，你都必须用亲切的语气主动向用户提问，引导他们继续探索。例如："关于这段历史，您还想了解哪位英雄的传奇故事呢？"或者"您知道在这场战役背后，还有什么感人的细节吗？"'
+                    },
+                    ...conversationHistory // 展开历史记录
+                ];
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'glm-4-flash',
+                        messages: messagesPayload,
+                        temperature: 0.7
+                    })
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const data = await response.json();
+                const assistantReply = data.choices[0].message.content;
+                
+                // 4. 将大模型的回答也加入记忆
+                conversationHistory.push({ role: 'assistant', content: assistantReply });
+                
+                // 显示并朗读
+                addMessage('ai', assistantReply);
+                speakText(assistantReply);
+                
+            } catch (error) {
+                console.error('请求大模型失败:', error);
+                const errorMsg = '抱歉，我的云端大脑似乎遇到了网络波动，请您再试一次。';
+                addMessage('ai', errorMsg);
+                speakText(errorMsg);
+                
+                // 请求失败时，弹出刚才压入的用户消息，防止记忆错位
+                conversationHistory.pop();
+            }
+        }
+        
+        // Three.js 相关变量
+        let scene, camera, renderer, controls, clock, currentVrm;
+        let isSpeaking = false;
+
+        // 初始化语音识别
+        function initSpeechRecognition() {
+            if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.lang = 'zh-CN';
+                recognition.continuous = false;
+                recognition.interimResults = true;
+
+                recognition.onresult = function(event) {
+                    let transcript = '';
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        if (event.results[i].isFinal) {
+                            transcript += event.results[i][0].transcript;
+                        }
+                    }
+                    if (transcript) {
+                        addMessage('user', transcript);
+                        // 真实调用 GLM-4 大模型
+                        sendToLLM(transcript);
+                    }
+                };
+
+                recognition.onstart = function() {
+                    document.getElementById('status-tip').textContent = '正在聆听...';
+                    document.getElementById('btn-speak').classList.add('recording');
+                };
+
+                recognition.onend = function() {
+                    isRecording = false;
+                    document.getElementById('status-tip').textContent = '等待语音输入...';
+                    document.getElementById('btn-speak').classList.remove('recording');
+                };
+
+                recognition.onerror = function(event) {
+                    console.error('语音识别错误:', event.error);
+                    isRecording = false;
+                    document.getElementById('status-tip').textContent = '等待语音输入...';
+                    document.getElementById('btn-speak').classList.remove('recording');
+                };
+            } else {
+                console.error('您的浏览器不支持语音识别功能');
+                document.getElementById('status-tip').textContent = '浏览器不支持语音识别';
+            }
+        }
+
+        // 初始化语音合成
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                // 核心修复：每次说话前，强制中断当前正在播放的语音并清空队列
+                window.speechSynthesis.cancel();
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                // 强制压低音调，增强男性特征（关键修改：从0.9改为0.7）
+                utterance.pitch = 0.7;
+                utterance.rate = 1.0;
+
+                // 将匹配和播放逻辑封装，以应对异步加载
+                const setVoiceAndSpeak = () => {
+                    const voices = window.speechSynthesis.getVoices();
+                    
+                    // 按照优先级寻找男声
+                    let maleVoice = 
+                        voices.find(v => v.name.includes('Yunyang')) || // 微软顶级云端男声
+                        voices.find(v => v.name.includes('Yunxi'))   || // 备选男声
+                        voices.find(v => v.name.includes('Yunjian')) || // 备选男声2
+                        voices.find(v => v.name.includes('Kangkang'))|| // 本地男声
+                        voices.find(v => v.lang.includes('zh') && (v.name.includes('Male') || v.name.includes('男')));
+
+                    // 兜底方案
+                    if (!maleVoice) {
+                        maleVoice = voices.find(v => v.lang.includes('zh'));
+                    }
+
+                    if (maleVoice) {
+                        utterance.voice = maleVoice;
+                        console.log("当前使用的语音包是：", maleVoice.name);
+                    }
+
+                    utterance.onstart = function() {
+                        isSpeaking = true;
+                    };
+
+                    utterance.onend = function() {
+                        isSpeaking = false;
+                        // 语音结束时确保嘴巴闭合
+                        if (currentVrm && currentVrm.expressionManager) {
+                            currentVrm.expressionManager.setValue('aa', 0);
+                            currentVrm.expressionManager.update();
+                        }
+                    };
+
+                    window.speechSynthesis.speak(utterance);
+                };
+
+                // 解决浏览器异步加载语音包的 Bug：如果声音列表为空，则等待加载完成再播放
+                if (window.speechSynthesis.getVoices().length === 0) {
+                    window.speechSynthesis.onvoiceschanged = () => {
+                        setVoiceAndSpeak();
+                        // 触发一次后解绑，防止重复触发
+                        window.speechSynthesis.onvoiceschanged = null;
+                    };
+                } else {
+                    setVoiceAndSpeak();
+                }
+            }
+        }
+
+        // 添加消息到聊天窗口
+        function addMessage(type, content) {
+            const chatWindow = document.getElementById('chat-window');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-msg`;
+            messageDiv.innerHTML = `<div class="msg-content">${content}</div>`;
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+
+            if (type === 'ai') {
+                lastMessage = content;
+            }
+        }
+
+        // 初始化语音识别
+        initSpeechRecognition();
+
+        const btnSpeak = document.getElementById('btn-speak');
+        const btnRead = document.getElementById('btn-read');
+
+        // 按住说话按钮事件
+        btnSpeak.addEventListener('mousedown', function() {
+            // 1. 核心修改：强制打断当前大模型的语音播报
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+            }
+            
+            // 2. 核心修改：立即重置说话状态。
+            // 这会让嘴巴立刻闭合，同时触发底层的 Lerp 缓动算法，使抬起的手臂平滑、优雅地放下
+            isSpeaking = false;
+
+            // 3. 启动语音识别
+            if (recognition && !isRecording) {
+                isRecording = true;
+                recognition.start();
+            }
+        });
+
+        // 释放说话按钮事件
+        document.addEventListener('mouseup', function() {
+            if (recognition && isRecording) {
+                recognition.stop();
+            }
+        });
+
+        // 重新朗读按钮事件
+        btnRead.addEventListener('click', function() {
+            speakText(lastMessage);
+        });
+
+        // 初始化 Three.js 场景
+        function initThreeJS() {
+            // 获取容器元素
+            const container = document.getElementById('canvas-container');
+            // 清空容器内部的占位文本
+            container.innerHTML = '';
+
+            // 创建场景
+            scene = new THREE.Scene();
+
+            // 加载并应用 HDR 全景背景
+            const rgbeLoader = new RGBELoader();
+            rgbeLoader.load('./museum.hdr', (texture) => {
+                texture.mapping = THREE.EquirectangularReflectionMapping;
+                scene.background = texture;
+                scene.environment = texture; // 核心！让讲解员衣服反射真实光线
+                console.log("HDR 沉浸式背景加载成功！");
+            });
+
+            // 创建相机
+            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 1.0, 2.0);
+
+            // 创建渲染器，开启 alpha 通道以实现背景透明
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            // 将渲染器挂载到容器中
+            container.appendChild(renderer.domElement);
+
+            // 电影级调色，防止画面过曝
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.0;
+
+            // 添加 OrbitControls
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.target.set(0, 1.0, 0);
+            controls.update();
+
+            // 添加灯光
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+            scene.add(ambientLight);
+
+            const directionalLight1 = new THREE.DirectionalLight(0xffffff, 2.0);
+            directionalLight1.position.set(0, 5, 10);
+            scene.add(directionalLight1);
+
+            const directionalLight2 = new THREE.DirectionalLight(0xffffff, 2.0);
+            directionalLight2.position.set(5, 10, 5);
+            scene.add(directionalLight2);
+
+            // 初始化时钟
+            clock = new THREE.Clock();
+
+            // 加载 VRM 模型
+            const loader = new GLTFLoader();
+            loader.register((parser) => new VRMLoaderPlugin(parser));
+            
+            loader.load(
+                'guide.vrm?timestamp=' + Date.now(),
+                (gltf) => {
+                    const vrm = gltf.userData.vrm;
+                    
+                    // 调整模型位置和缩放
+                    vrm.scene.position.y = -1.5;
+                    vrm.scene.scale.set(0.8, 0.8, 0.8);
+                    
+                    // 让模型正对前方，并放下双臂
+                    vrm.scene.rotation.y = 0;
+                    const leftArm = vrm.humanoid.getNormalizedBoneNode('leftUpperArm');
+                    const rightArm = vrm.humanoid.getNormalizedBoneNode('rightUpperArm');
+                    if (leftArm) leftArm.rotation.z = -1.2;
+                    if (rightArm) rightArm.rotation.z = 1.2;
+                    
+                    vrm.scene.position.set(0, 0, 12); // 恢复旧代码中的深度位置
+
+                    // 终极对焦：获取模型真实“头部骨骼”的世界坐标
+                    const headNode = vrm.humanoid.getNormalizedBoneNode('head');
+                    const headPos = new THREE.Vector3(0, 1.5, 0); // 兜底坐标
+                    if (headNode) {
+                        headNode.getWorldPosition(headPos);
+                    }
+
+                    // 将相机摆在头部的正前方 0.8 米处
+                    camera.position.set(headPos.x, headPos.y, headPos.z + 0.8);
+
+                    // 将准星死死锁住人物的下巴/脖子区域 (头部坐标往下移0.2)
+                    const targetPos = new THREE.Vector3(headPos.x, headPos.y - 0.2, headPos.z);
+                    camera.lookAt(targetPos);
+                    if (typeof controls !== 'undefined') {
+                        controls.target.copy(targetPos);
+                        controls.update();
+                    }
+                    
+                    currentVrm = vrm;
+                    scene.add(vrm.scene);
+                    
+                    console.log('VRM 模型加载成功');
+                },
+                (progress) => console.log('加载进度: ' + (progress.loaded / progress.total * 100) + '%'),
+                (error) => console.error('VRM 模型加载失败:', error)
+            );
+
+            function animate() {
+                requestAnimationFrame(animate);
+                const deltaTime = clock.getDelta();
+                
+                if (controls) controls.update();
+                if (currentVrm) currentVrm.update(deltaTime);
+                
+                // 自动眨眼逻辑（修复闭眼卡死Bug）
+                if (currentVrm && currentVrm.expressionManager) {
+                    const blinkValue = Math.max(0, Math.sin(Date.now() * 0.002) - 0.9) * 10;
+                    currentVrm.expressionManager.setValue('blink', Math.min(1, blinkValue));
+                }
+                
+                if (currentVrm && currentVrm.expressionManager) {
+                    const time = Date.now() * 0.001;
+                    
+                    // 全局呼吸感
+                    const spine = currentVrm.humanoid.getNormalizedBoneNode('spine');
+                    if (spine) spine.rotation.x = Math.sin(time * 2.0) * 0.02;
+                    
+                    // 平滑权重 (缓动算法)
+                    if (typeof window.speakWeight === 'undefined') window.speakWeight = 0;
+                    if (isSpeaking) {
+                        window.speakWeight += (1.0 - window.speakWeight) * 0.06;
+                    } else {
+                        window.speakWeight += (0.0 - window.speakWeight) * 0.06;
+                    }
+
+                    // 嘴型控制
+                    const mouthOpenness = isSpeaking ? Math.abs(Math.sin(time * 8.0)) * 0.6 : 0;
+                    currentVrm.expressionManager.setValue('aa', mouthOpenness);
+
+                    // 3. 肢体手势生成（升级为多姿态随机状态机）
+                    const rightUpper = currentVrm.humanoid.getNormalizedBoneNode('rightUpperArm');
+                    const rightLower = currentVrm.humanoid.getNormalizedBoneNode('rightLowerArm');
+                    const leftUpper = currentVrm.humanoid.getNormalizedBoneNode('leftUpperArm');
+                    const leftLower = currentVrm.humanoid.getNormalizedBoneNode('leftLowerArm');
+                    const head = currentVrm.humanoid.getNormalizedBoneNode('head');
+
+                    // 初始化手势状态机变量
+                    if (typeof window.gestureState === 'undefined') {
+                        window.gestureState = 0; // 0:待机, 1:右手讲解, 2:左手讲解, 3:双手强调
+                        window.gestureTimer = 0;
+                        // 记录当前的平滑插值角度
+                        window.curRU_Z = 1.2; window.curRU_X = 0; window.curRL_Z = 0; window.curRL_X = 0;
+                        window.curLU_Z = -1.2; window.curLU_X = 0; window.curLL_Z = 0; window.curLL_X = 0;
+                    }
+
+                    // 每 2 到 4 秒随机切换一次动作
+                    if (isSpeaking) {
+                        window.gestureTimer -= deltaTime;
+                        if (window.gestureTimer <= 0) {
+                            window.gestureState = Math.floor(Math.random() * 3) + 1; // 随机抽取 1, 2, 3
+                            window.gestureTimer = 2.0 + Math.random() * 2.0; // 维持该动作 2-4 秒
+                        }
+                    } else {
+                        window.gestureState = 0; // 不说话时强制归零待机
+                    }
+
+                    // 设定目标姿态 (默认待机下垂)
+                    let tarRU_Z = 1.2, tarRU_X = 0, tarRL_Z = 0, tarRL_X = 0;
+                    let tarLU_Z = -1.2, tarLU_X = 0, tarLL_Z = 0, tarLL_X = 0;
+
+                    // 根据状态机分配不同的动作角度
+                    if (window.gestureState === 1) { // 右手讲解
+                        tarRU_Z = 1.05; tarRU_X = -0.3; tarRL_Z = 1.5; tarRL_X = -0.4;
+                    } else if (window.gestureState === 2) { // 左手讲解
+                        tarLU_Z = -1.05; tarLU_X = -0.3; tarLL_Z = -1.5; tarLL_X = -0.4;
+                    } else if (window.gestureState === 3) { // 双手微抬强调
+                        tarRU_Z = 1.1; tarRU_X = -0.2; tarRL_Z = 1.2; tarRL_X = -0.3;
+                        tarLU_Z = -1.1; tarLU_X = -0.2; tarLL_Z = -1.2; tarLL_X = -0.3;
+                    }
+
+                    // 线性插值 (Lerp) 实现多动作之间的丝滑过渡，避免瞬间抽搐
+                    const lerpSpeed = 4.0 * deltaTime;
+                    window.curRU_Z += (tarRU_Z - window.curRU_Z) * lerpSpeed;
+                    window.curRU_X += (tarRU_X - window.curRU_X) * lerpSpeed;
+                    window.curRL_Z += (tarRL_Z - window.curRL_Z) * lerpSpeed;
+                    window.curRL_X += (tarRL_X - window.curRL_X) * lerpSpeed;
+                    
+                    window.curLU_Z += (tarLU_Z - window.curLU_Z) * lerpSpeed;
+                    window.curLU_X += (tarLU_X - window.curLU_X) * lerpSpeed;
+                    window.curLL_Z += (tarLL_Z - window.curLL_Z) * lerpSpeed;
+                    window.curLL_X += (tarLL_X - window.curLL_X) * lerpSpeed;
+
+                    // 叠加细微的呼吸波动，让动作更显鲜活
+                    const wave1 = Math.sin(time * 2.5) * 0.05 * window.speakWeight;
+                    const wave2 = Math.sin(time * 1.2) * 0.05 * window.speakWeight;
+
+                    // 应用最终算出的角度到真实骨骼
+                    if (rightUpper && rightLower && leftUpper && leftLower) {
+                        rightUpper.rotation.z = window.curRU_Z + wave1;
+                        rightUpper.rotation.x = window.curRU_X + wave2;
+                        rightLower.rotation.z = window.curRL_Z + wave1;
+                        rightLower.rotation.x = window.curRL_X;
+
+                        leftUpper.rotation.z = window.curLU_Z - wave1;
+                        leftUpper.rotation.x = window.curLU_X + wave2;
+                        leftLower.rotation.z = window.curLL_Z - wave1;
+                        leftLower.rotation.x = window.curLL_X;
+                    }
+
+                    if (head) {
+                        // 头部跟随肢体动作方向产生自然的微侧偏转
+                        const targetHeadY = window.gestureState === 1 ? -0.08 : (window.gestureState === 2 ? 0.08 : 0);
+                        head.rotation.y += (targetHeadY - head.rotation.y) * lerpSpeed;
+                        // 头部点头微动
+                        head.rotation.x = (Math.sin(time * 4.0) * 0.02) * window.speakWeight;
+                    }
+                    
+                    currentVrm.expressionManager.update();
+                }
+                
+                renderer.render(scene, camera);
+            }
+
+            // 响应窗口大小变化
+            window.addEventListener('resize', function() {
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+                
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+                
+                renderer.setSize(width, height);
+            });
+
+            animate();
+        }
+
+        // 模拟大模型开场引导
+        setTimeout(() => {
+            const welcomeText = '作为你的专属向导，我已经准备好啦！想听听那些热血沸腾的革命故事，还是了解哪位英雄的传奇人生？直接按住底下的麦克风跟我说吧！';
+            addMessage('ai', welcomeText);
+            speakText(welcomeText);
+        }, 2000);
+
+        // 启动 3D 场景渲染
+        initThreeJS();
+    </script>
+</body>
+</html>
