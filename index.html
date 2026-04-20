@@ -490,12 +490,14 @@
                 };
 
                 recognition.onstart = function() {
+                    window.isActuallyRecording = true; // 新增安全锁：真正开始录音了
                     document.getElementById('status-tip').textContent = '正在聆听...';
                     document.getElementById('btn-speak').classList.add('recording');
                 };
 
                 recognition.onend = function() {
                     isRecording = false;
+                    window.isActuallyRecording = false; // 重置安全锁
                     document.getElementById('status-tip').textContent = '等待语音输入...';
                     document.getElementById('btn-speak').classList.remove('recording');
                 };
@@ -596,42 +598,60 @@
         const btnSpeak = document.getElementById('btn-speak');
         const btnRead = document.getElementById('btn-read');
 
-        // 统一处理：开始录音 (兼容鼠标和触摸)
+        window.isActuallyRecording = false; // 初始安全锁状态
+
+        // 统一处理：开始录音
         function handleStartRecord(e) {
-            if (e.cancelable) e.preventDefault(); // 防止手机端触发双重点击
+            if (e.cancelable) e.preventDefault();
             
-            // 核心修复：强制打断并重置动作
             if (window.speechSynthesis.speaking) {
                 window.speechSynthesis.cancel();
             }
             isSpeaking = false;
 
-            // 启动语音识别
             if (recognition && !isRecording) {
-                isRecording = true;
-                recognition.start();
+                isRecording = true; // 标记意图
+                try {
+                    recognition.start();
+                } catch (err) {
+                    console.warn("录音启动过快被拦截，防止崩溃:", err);
+                    isRecording = false;
+                }
             }
         }
 
         // 统一处理：结束录音
         function handleStopRecord(e) {
             if (e.cancelable) e.preventDefault();
+            
+            // 只有当真正处于录音中，且底层已经 ready 时，才允许 stop
             if (recognition && isRecording) {
-                recognition.stop();
+                try {
+                    if (window.isActuallyRecording) {
+                        recognition.stop();
+                    } else {
+                        // 如果还没完全启动就松开了，使用 abort 直接掐断，比 stop 更安全
+                        recognition.abort();
+                    }
+                } catch (err) {
+                    console.warn("停止录音异常被捕获:", err);
+                }
+                isRecording = false;
+                window.isActuallyRecording = false;
             }
         }
 
         // 1. 绑定 PC 端鼠标事件
         btnSpeak.addEventListener('mousedown', handleStartRecord);
         document.addEventListener('mouseup', handleStopRecord);
-        document.addEventListener('mouseleave', handleStopRecord); // 防止鼠标移出按钮后一直录音
+        document.addEventListener('mouseleave', handleStopRecord);
 
-        // 2. 绑定移动端触摸事件 (核心修复，支持手机扫码体验)
+        // 2. 绑定移动端触摸事件
         btnSpeak.addEventListener('touchstart', handleStartRecord, { passive: false });
         document.addEventListener('touchend', handleStopRecord, { passive: false });
         document.addEventListener('touchcancel', handleStopRecord, { passive: false });
 
-        // 3. 重新朗读按钮事件 (兼容点击和触摸)
+        // 3. 重新朗读按钮事件
         btnRead.addEventListener('click', function(e) {
             if (e.cancelable) e.preventDefault();
             speakText(lastMessage);
@@ -869,11 +889,14 @@
             animate();
         }
 
-        // 模拟大模型开场引导
+        // 模拟大模型开场引导 (修复浏览器自动播放静音限制)
         setTimeout(() => {
-            const welcomeText = '作为你的专属向导，我已经准备好啦！想听听那些热血沸腾的革命故事，还是了解哪位英雄的传奇人生？直接按住底下的麦克风跟我说吧！';
+            const welcomeText = '作为你的专属向导，我已经准备好啦！想听听那些热血沸腾的革命故事，还是了解哪位英雄的传奇人生？\n\n(提示：初次见面，请点击下方“重新朗读”激活我的声音，或直接按住麦克风跟我说话吧！)';
             addMessage('ai', welcomeText);
-            speakText(welcomeText);
+            
+            // ⚠️ 核心修复：删除自动执行的 speakText，防止触发浏览器拦截导致引擎卡死
+            // 记录到 lastMessage 中，让用户可以通过点击“重新朗读”按钮来安全触发发声
+            lastMessage = welcomeText;
         }, 2000);
 
         // 启动 3D 场景渲染
