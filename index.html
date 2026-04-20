@@ -406,9 +406,7 @@
         
         // 大模型 API 配置
         const API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
-        const API_KEY = '853b555c85704c28955f75a6c0e15e81.f7liXPr5fu2YmqUW';
 
-        // 调用大模型 API
         async function sendToLLM(userInput) {
             try {
                 // 1. 将用户的新问题加入记忆
@@ -428,24 +426,24 @@
                     ...conversationHistory // 展开历史记录
                 ];
 
-                const response = await fetch(API_URL, {
+                // --- 核心修改：前端不再直连大模型，而是请求自己的后端接口 ---
+                // 注意：这里不再需要写 API_URL 和 API_KEY 了！
+                const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${API_KEY}`
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: 'glm-4-flash',
-                        messages: messagesPayload,
-                        temperature: 0.7
+                        messages: messagesPayload // 只发聊天记录，不发钥匙
                     })
                 });
 
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
                 const data = await response.json();
-                const assistantReply = data.choices[0].message.content;
                 
+                // 注意：由于后端直接转发了智谱的格式，所以这里提取回答的代码不用变
+                const assistantReply = data.choices[0].message.content;
                 // 4. 将大模型的回答也加入记忆
                 conversationHistory.push({ role: 'assistant', content: assistantReply });
                 
@@ -519,6 +517,8 @@
             if ('speechSynthesis' in window) {
                 // 核心修复：每次说话前，强制中断当前正在播放的语音并清空队列
                 window.speechSynthesis.cancel();
+                // 【新增核心代码】：强制唤醒可能因为浏览器静音策略而卡死的引擎
+                window.speechSynthesis.resume();
 
                 const utterance = new SpeechSynthesisUtterance(text);
                 // 强制压低音调，增强男性特征（关键修改：从0.9改为0.7）
@@ -596,33 +596,44 @@
         const btnSpeak = document.getElementById('btn-speak');
         const btnRead = document.getElementById('btn-read');
 
-        // 按住说话按钮事件
-        btnSpeak.addEventListener('mousedown', function() {
-            // 1. 核心修改：强制打断当前大模型的语音播报
+        // 统一处理：开始录音 (兼容鼠标和触摸)
+        function handleStartRecord(e) {
+            if (e.cancelable) e.preventDefault(); // 防止手机端触发双重点击
+            
+            // 核心修复：强制打断并重置动作
             if (window.speechSynthesis.speaking) {
                 window.speechSynthesis.cancel();
             }
-            
-            // 2. 核心修改：立即重置说话状态。
-            // 这会让嘴巴立刻闭合，同时触发底层的 Lerp 缓动算法，使抬起的手臂平滑、优雅地放下
             isSpeaking = false;
 
-            // 3. 启动语音识别
+            // 启动语音识别
             if (recognition && !isRecording) {
                 isRecording = true;
                 recognition.start();
             }
-        });
+        }
 
-        // 释放说话按钮事件
-        document.addEventListener('mouseup', function() {
+        // 统一处理：结束录音
+        function handleStopRecord(e) {
+            if (e.cancelable) e.preventDefault();
             if (recognition && isRecording) {
                 recognition.stop();
             }
-        });
+        }
 
-        // 重新朗读按钮事件
-        btnRead.addEventListener('click', function() {
+        // 1. 绑定 PC 端鼠标事件
+        btnSpeak.addEventListener('mousedown', handleStartRecord);
+        document.addEventListener('mouseup', handleStopRecord);
+        document.addEventListener('mouseleave', handleStopRecord); // 防止鼠标移出按钮后一直录音
+
+        // 2. 绑定移动端触摸事件 (核心修复，支持手机扫码体验)
+        btnSpeak.addEventListener('touchstart', handleStartRecord, { passive: false });
+        document.addEventListener('touchend', handleStopRecord, { passive: false });
+        document.addEventListener('touchcancel', handleStopRecord, { passive: false });
+
+        // 3. 重新朗读按钮事件 (兼容点击和触摸)
+        btnRead.addEventListener('click', function(e) {
+            if (e.cancelable) e.preventDefault();
             speakText(lastMessage);
         });
 
@@ -638,7 +649,7 @@
 
             // 加载并应用 HDR 全景背景
             const rgbeLoader = new RGBELoader();
-            rgbeLoader.load('./museum.hdr', (texture) => {
+            rgbeLoader.load('./museum.hdr?timestamp=' + Date.now(), (texture) => {
                 texture.mapping = THREE.EquirectangularReflectionMapping;
                 scene.background = texture;
                 scene.environment = texture; // 核心！让讲解员衣服反射真实光线
