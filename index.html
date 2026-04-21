@@ -535,14 +535,16 @@
                 const setVoiceAndSpeak = () => {
                     const voices = window.speechSynthesis.getVoices();
                     
-                    // 按照优先级寻找男声 (新增 Chrome 男声兼容)
+                    // ⚠️ 终极安全策略：强行优先寻找本地离线男声，彻底避开容易卡死的 Online 云端声音
                     let maleVoice = 
-                        voices.find(v => v.name.includes('Yunyang')) || 
-                        voices.find(v => v.name.includes('Yunxi'))   || 
-                        // --- 关键：针对 Chrome 增加的搜索条件 ---
+                        // 1. 首选绝对稳定的本地离线男声 (康康)
+                        voices.find(v => v.name.includes('Kangkang')) || 
+                        // 2. Chrome 的离线男声
                         voices.find(v => v.lang.includes('zh') && v.name.includes('Google') && v.name.includes('Male')) || 
-                        voices.find(v => v.name.includes('Kangkang'))|| 
-                        voices.find(v => v.lang.includes('zh') && (v.name.includes('Male') || v.name.includes('男')));
+                        // 3. 寻找其他任何【不包含】Online 字样的中文男声
+                        voices.find(v => v.lang.includes('zh') && !v.name.includes('Online') && (v.name.includes('Male') || v.name.includes('男'))) || 
+                        // 4. 只有在本地实在没声音时，才敢去碰微软的云端声音
+                        voices.find(v => v.name.includes('Yunyang') || v.name.includes('Yunxi'));
 
                     // 兜底方案：如果实在没找到原生男声，强行降调
                     if (!maleVoice) {
