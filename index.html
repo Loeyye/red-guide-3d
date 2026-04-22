@@ -535,26 +535,24 @@
                 const setVoiceAndSpeak = () => {
                     const voices = window.speechSynthesis.getVoices();
                     
-                    // 【新增排错雷达】：打印出当前设备到底有哪些中文声音
+                    // 【排错雷达】打印可用声音
                     const zhVoices = voices.filter(v => v.lang.includes('zh'));
                     console.log("🔍 当前浏览器支持的中文声音库：", zhVoices.map(v => v.name));
                     
-                    // ⚠️ 全网男声地毯式搜索策略
+                    // ⚠️ 强行锁定"云扬"策略
                     let maleVoice = 
-                        // 1. Windows 首选稳定本地男声
-                        voices.find(v => v.name.includes('Kangkang') || v.name.includes('康康')) || 
-                        // 2. 苹果 Mac/iOS 自带男声
-                        voices.find(v => v.name.includes('Lijian') || v.name.includes('利健')) || 
-                        // 3. 任何明确标注为男性的中文声音
-                        voices.find(v => v.lang.includes('zh') && (v.name.includes('Male') || v.name.includes('男'))) || 
-                        // 4. 微软云端男声 (过滤掉会导致死机的 Online 后缀)
-                        voices.find(v => v.lang.includes('zh') && !v.name.includes('Online') && (v.name.includes('Yunxi') || v.name.includes('Yunyang') || v.name.includes('Yunjian')));
+                        // 1. 绝对首选：云扬 (微软顶级播音腔男声)
+                        voices.find(v => v.name.includes('Yunyang')) || 
+                        // 2. 备选：云希、晓聪 (其他高质量云端男声)
+                        voices.find(v => v.name.includes('Yunxi') || v.name.includes('Xiaocong')) || 
+                        // 3. 兜底：康康或本地普通男声
+                        voices.find(v => v.name.includes('Kangkang') || (v.lang.includes('zh') && (v.name.includes('Male') || v.name.includes('男'))));
 
-                    // 兜底方案：如果实在没找到标准男声，强行避开常见女声
+                    // 兜底方案：避开常见女声
                     if (!maleVoice) {
-                        maleVoice = voices.find(v => v.lang.includes('zh') && !v.name.includes('Huihui') && !v.name.includes('Yaoyao') && !v.name.includes('Tingting') && !v.name.includes('Xiaoxiao') && !v.name.includes('Google 普通话'))
-                                    || voices.find(v => v.lang.includes('zh')); // 最终妥协：有什么用什么
-                        utterance.pitch = 0.5; // 如果是被迫用的女声，强行拉低音调伪装
+                        maleVoice = voices.find(v => v.lang.includes('zh') && !v.name.includes('Huihui') && !v.name.includes('Yaoyao') && !v.name.includes('Xiaoxiao'))
+                                    || voices.find(v => v.lang.includes('zh'));
+                        utterance.pitch = 0.5; // 如果被迫用女声，降调伪装
                     } else {
                         utterance.pitch = 0.7; // 标准男声最自然的低沉音调
                     }
@@ -878,7 +876,7 @@
 
         // 模拟大模型开场引导 (修复浏览器自动播放静音限制)
         setTimeout(() => {
-            const welcomeText = '作为你的专属向导，我已经准备好啦！想听听那些热血沸腾的革命故事，还是了解哪位英雄的传奇人生？\n\n(提示：初次见面，请点击下方“重新朗读”激活我的声音，或直接按住麦克风跟我说话吧！)';
+            const welcomeText = '作为你的专属向导，我已经准备好啦！想听听那些热血沸腾的革命故事，还是了解哪位英雄的传奇人生？\n\n';
             addMessage('ai', welcomeText);
             lastMessage = welcomeText;
         }, 2000);
