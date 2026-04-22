@@ -539,18 +539,20 @@
                     const zhVoices = voices.filter(v => v.lang.includes('zh'));
                     console.log("🔍 当前浏览器支持的中文声音库：", zhVoices.map(v => v.name));
                     
-                    // ⚠️ 强行锁定"云扬"策略
+                    // ⚠️ 终极无敌男声匹配（同时匹配拼音和中文汉字）
                     let maleVoice = 
-                        // 1. 绝对首选：云扬 (微软顶级播音腔男声)
-                        voices.find(v => v.name.includes('Yunyang')) || 
-                        // 2. 备选：云希、晓聪 (其他高质量云端男声)
-                        voices.find(v => v.name.includes('Yunxi') || v.name.includes('Xiaocong')) || 
-                        // 3. 兜底：康康或本地普通男声
-                        voices.find(v => v.name.includes('Kangkang') || (v.lang.includes('zh') && (v.name.includes('Male') || v.name.includes('男'))));
+                        // 1. 绝对首选：云扬 (顶级播音腔)
+                        voices.find(v => v.name.includes('Yunyang') || v.name.includes('云扬')) || 
+                        // 2. 备选：云希、晓聪、云枫 (其他顶级男声)
+                        voices.find(v => v.name.includes('Yunxi') || v.name.includes('云希') || v.name.includes('Xiaocong') || v.name.includes('晓聪') || v.name.includes('Yunfeng') || v.name.includes('云枫')) || 
+                        // 3. 兜底：康康
+                        voices.find(v => v.name.includes('Kangkang') || v.name.includes('康康')) || 
+                        // 4. 通用男声
+                        voices.find(v => v.lang.includes('zh') && (v.name.includes('Male') || v.name.includes('男')));
 
                     // 兜底方案：避开常见女声
                     if (!maleVoice) {
-                        maleVoice = voices.find(v => v.lang.includes('zh') && !v.name.includes('Huihui') && !v.name.includes('Yaoyao') && !v.name.includes('Xiaoxiao'))
+                        maleVoice = voices.find(v => v.lang.includes('zh') && !v.name.includes('Huihui') && !v.name.includes('Yaoyao') && !v.name.includes('Xiaoxiao') && !v.name.includes('慧慧') && !v.name.includes('晓晓'))
                                     || voices.find(v => v.lang.includes('zh'));
                         utterance.pitch = 0.5; // 如果被迫用女声，降调伪装
                     } else {
