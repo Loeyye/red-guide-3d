@@ -535,28 +535,33 @@
                 const setVoiceAndSpeak = () => {
                     const voices = window.speechSynthesis.getVoices();
                     
-                    // ⚠️ 终极安全策略：强行优先寻找本地离线男声，彻底避开容易卡死的 Online 云端声音
+                    // 【新增排错雷达】：打印出当前设备到底有哪些中文声音
+                    const zhVoices = voices.filter(v => v.lang.includes('zh'));
+                    console.log("🔍 当前浏览器支持的中文声音库：", zhVoices.map(v => v.name));
+                    
+                    // ⚠️ 全网男声地毯式搜索策略
                     let maleVoice = 
-                        // 1. 首选绝对稳定的本地离线男声 (康康)
-                        voices.find(v => v.name.includes('Kangkang')) || 
-                        // 2. Chrome 的离线男声
-                        voices.find(v => v.lang.includes('zh') && v.name.includes('Google') && v.name.includes('Male')) || 
-                        // 3. 寻找其他任何【不包含】Online 字样的中文男声
-                        voices.find(v => v.lang.includes('zh') && !v.name.includes('Online') && (v.name.includes('Male') || v.name.includes('男'))) || 
-                        // 4. 只有在本地实在没声音时，才敢去碰微软的云端声音
-                        voices.find(v => v.name.includes('Yunyang') || v.name.includes('Yunxi'));
+                        // 1. Windows 首选稳定本地男声
+                        voices.find(v => v.name.includes('Kangkang') || v.name.includes('康康')) || 
+                        // 2. 苹果 Mac/iOS 自带男声
+                        voices.find(v => v.name.includes('Lijian') || v.name.includes('利健')) || 
+                        // 3. 任何明确标注为男性的中文声音
+                        voices.find(v => v.lang.includes('zh') && (v.name.includes('Male') || v.name.includes('男'))) || 
+                        // 4. 微软云端男声 (过滤掉会导致死机的 Online 后缀)
+                        voices.find(v => v.lang.includes('zh') && !v.name.includes('Online') && (v.name.includes('Yunxi') || v.name.includes('Yunyang') || v.name.includes('Yunjian')));
 
-                    // 兜底方案：如果实在没找到原生男声，强行降调
+                    // 兜底方案：如果实在没找到标准男声，强行避开常见女声
                     if (!maleVoice) {
-                        maleVoice = voices.find(v => v.lang.includes('zh'));
-                        utterance.pitch = 0.2; // 降调伪装男声
+                        maleVoice = voices.find(v => v.lang.includes('zh') && !v.name.includes('Huihui') && !v.name.includes('Yaoyao') && !v.name.includes('Tingting') && !v.name.includes('Xiaoxiao') && !v.name.includes('Google 普通话'))
+                                    || voices.find(v => v.lang.includes('zh')); // 最终妥协：有什么用什么
+                        utterance.pitch = 0.5; // 如果是被迫用的女声，强行拉低音调伪装
                     } else {
-                        utterance.pitch = 0.7;
+                        utterance.pitch = 0.7; // 标准男声最自然的低沉音调
                     }
 
                     if (maleVoice) {
                         utterance.voice = maleVoice;
-                        console.log("当前使用的语音包是：", maleVoice.name);
+                        console.log("🎯 最终成功锁定的发声引擎：", maleVoice.name);
                     }
 
                     utterance.onstart = function() {
