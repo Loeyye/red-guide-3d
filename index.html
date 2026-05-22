@@ -21,7 +21,7 @@
         }
 
         body {
-            background-color: #F9F6F0; /* 温润的宣纸/暖玉底色 */
+            background-color: #F9F6F0;
             height: 100vh;
             overflow: hidden;
             margin: 0;
@@ -34,11 +34,8 @@
             width: 100%;
             height: 100%;
             background-image:
-                /* 1. 左上角：故宫红微光晕，点题红色文化且不刺眼 */
                 radial-gradient(circle at 10% 10%, rgba(139, 16, 20, 0.12) 0%, transparent 60%),
-                /* 2. 右下角：香槟金光晕，提升整体的高级感与辉煌感 */
                 radial-gradient(circle at 90% 90%, rgba(212, 175, 55, 0.15) 0%, transparent 60%),
-                /* 3. 传统中式织锦/十字暗纹 (纯CSS SVG)，透明度极低，作为质感底纹 */
                 url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%238b1014' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
             z-index: -1;
         }
@@ -50,7 +47,6 @@
             padding: 20px 40px;
         }
 
-        /* 毛玻璃面板通用 */
         .glass-panel {
             background: var(--glass-bg);
             backdrop-filter: blur(16px);
@@ -60,7 +56,6 @@
             border: 1px solid rgba(255,255,255,0.6);
         }
 
-        /* 顶部导航栏 */
         .header {
             display: flex;
             justify-content: space-between;
@@ -112,7 +107,6 @@
             min-height: 0;
         }
 
-        /* 左侧数字人展示区 */
         .avatar-section {
             display: flex;
             flex-direction: column;
@@ -168,7 +162,6 @@
             }
         }
 
-        /* 右侧交互区 */
         .interaction-section {
             display: flex;
             flex-direction: column;
@@ -194,6 +187,8 @@
             border-radius: 18px;
             font-size: 14px;
             line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
 
         .ai-msg {
@@ -223,6 +218,46 @@
             font-size: 14px;
             color: var(--text-main);
             opacity: 0.7;
+        }
+
+        .text-input-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .text-input {
+            flex: 1;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(139, 16, 20, 0.2);
+            background: rgba(255, 255, 255, 0.85);
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .text-input:focus {
+            border-color: var(--primary-red);
+            box-shadow: 0 0 0 3px rgba(139, 16, 20, 0.08);
+        }
+
+        .btn-send {
+            flex: 0 0 90px;
+            padding: 14px 18px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent-gold), #f4d03f);
+            color: #2c3e50;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-send:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(212, 175, 55, 0.25);
         }
 
         .btn-group {
@@ -277,7 +312,6 @@
             box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
 
-        /* 呼吸动画 */
         @keyframes recordPulse {
             0% {
                 transform: scale(1);
@@ -293,14 +327,12 @@
             }
         }
 
-        /* 图标样式 */
         .icon {
             width: 20px;
             height: 20px;
             fill: currentColor;
         }
 
-        /* 滚动条样式 */
         ::-webkit-scrollbar {
             width: 6px;
         }
@@ -319,10 +351,10 @@
             background: rgba(139, 16, 20, 0.5);
         }
 
-        /* 3D 画布容器样式 */
         #canvas-container {
             position: relative;
         }
+
         #canvas-container canvas {
             display: block;
             width: 100% !important;
@@ -330,6 +362,7 @@
             outline: none;
         }
     </style>
+
     <script type="importmap">
         {
             "imports": {
@@ -340,8 +373,10 @@
         }
     </script>
 </head>
+
 <body>
     <div class="bg-layer"></div>
+
     <div class="app-container">
         <header class="header glass-panel">
             <div class="logo-area">
@@ -351,6 +386,7 @@
             </div>
             <div class="status-badge">GLM-4 大脑接入正常</div>
         </header>
+
         <main class="main-content">
             <section class="avatar-section">
                 <div class="canvas-wrapper glass-panel" id="canvas-container">
@@ -358,19 +394,34 @@
                         3D 数字人展示区
                     </div>
                 </div>
+
                 <div class="nameplate glass-panel">
                     <span class="dot"></span>
                     专属数字向导：红七七
                 </div>
             </section>
+
             <section class="interaction-section">
                 <div class="chat-window glass-panel" id="chat-window">
-                        <div class="message ai-msg">
+                    <div class="message ai-msg">
                         <div class="msg-content">你好呀！我是红七七，很高兴能在数字展厅遇见你！✨</div>
                     </div>
                 </div>
+
                 <div class="control-panel glass-panel">
                     <div class="status-tip" id="status-tip">等待语音输入...</div>
+
+                    <div class="text-input-row">
+                        <input
+                            class="text-input"
+                            id="text-input"
+                            type="text"
+                            placeholder="也可以直接输入问题，例如：请介绍一位革命英雄"
+                            maxlength="300"
+                        />
+                        <button class="btn-send" id="btn-send-text">发送</button>
+                    </div>
+
                     <div class="btn-group">
                         <button class="btn btn-primary" id="btn-speak">
                             <svg class="icon" viewBox="0 0 24 24">
@@ -378,6 +429,7 @@
                             </svg>
                             点击 说话
                         </button>
+
                         <button class="btn btn-secondary" id="btn-read">
                             <svg class="icon" viewBox="0 0 24 24">
                                 <path d="M8 5v14l11-7z"></path>
@@ -397,208 +449,348 @@
         import { VRMLoaderPlugin } from '@pixiv/three-vrm';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-        // 全局变量
         let isRecording = false;
+        let isGenerating = false;
+        let isSpeakingLocked = false;
         let recognition = null;
-        let lastMessage = "你好呀！我是红七七，很高兴能在数字展厅遇见你！";
-        let conversationHistory = []; // 用于存储多轮对话记忆
-        
-        // 大模型 API 配置
-        const API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+        let lastMessage = '你好呀！我是红七七，很高兴能在数字展厅遇见你！';
+        let conversationHistory = [];
+
+        let scene, camera, renderer, controls, clock, currentVrm;
+        let isSpeaking = false;
+
+        function setButtonDisabled(button, disabled) {
+            if (!button) return;
+            button.disabled = disabled;
+            button.style.opacity = disabled ? '0.6' : '1';
+            button.style.cursor = disabled ? 'not-allowed' : 'pointer';
+        }
+
+        function setTextInputDisabled(disabled) {
+            const textInput = document.getElementById('text-input');
+            const btnSendText = document.getElementById('btn-send-text');
+
+            if (textInput) {
+                textInput.disabled = disabled;
+                textInput.style.opacity = disabled ? '0.6' : '1';
+                textInput.style.cursor = disabled ? 'not-allowed' : 'text';
+            }
+
+            if (btnSendText) {
+                btnSendText.disabled = disabled;
+                btnSendText.style.opacity = disabled ? '0.6' : '1';
+                btnSendText.style.cursor = disabled ? 'not-allowed' : 'pointer';
+            }
+        }
+
+        function setGeneratingState(generating) {
+            isGenerating = generating;
+
+            const statusTip = document.getElementById('status-tip');
+            const btnSpeak = document.getElementById('btn-speak');
+            const btnRead = document.getElementById('btn-read');
+
+            if (generating) {
+                if (statusTip) statusTip.textContent = '红七七正在思考中...';
+                setButtonDisabled(btnSpeak, true);
+                setButtonDisabled(btnRead, true);
+                setTextInputDisabled(true);
+            } else {
+                if (!isSpeakingLocked && !isSpeaking && !window.speechSynthesis.speaking) {
+                    if (statusTip) statusTip.textContent = '等待语音输入...';
+                    setButtonDisabled(btnSpeak, false);
+                    setButtonDisabled(btnRead, false);
+                    setTextInputDisabled(false);
+                }
+            }
+        }
 
         async function sendToLLM(userInput) {
+            if (isGenerating) return;
+
+            setGeneratingState(true);
+
             try {
-                // 1. 将用户的新问题加入记忆
                 conversationHistory.push({ role: 'user', content: userInput });
 
-                // 2. 限制记忆长度，防止突破 Token 限制（保留最近的20条，即10轮对话）
                 if (conversationHistory.length > 20) {
                     conversationHistory = conversationHistory.slice(conversationHistory.length - 20);
                 }
 
-                // 3. 构建包含完整记忆的消息队列
-                const messagesPayload = [
-                    {
-                        role: 'system',
-                        content: '【角色设定】\n你是一位专业、热情、知识渊博的"红色文化数字讲解员"。你的名字叫"红七七"。\n\n【表达风格】\n1. 严谨与生动：涉及历史事件必须绝对准确。请用讲故事的口吻娓娓道来，每次回答的字数控制在 150 到 250 字左右，内容要详实丰满。\n2. 主动互动（极度重要）：在每一次回答的结尾，你都必须用亲切的语气主动向用户提问，引导他们继续探索。例如："关于这段历史，您还想了解哪位英雄的传奇故事呢？"或者"您知道在这场战役背后，还有什么感人的细节吗？"'
-                    },
-                    ...conversationHistory // 展开历史记录
-                ];
-
-                // --- 核心修改：前端不再直连大模型，而是请求自己的后端接口 ---
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        messages: messagesPayload // 只发聊天记录，不发钥匙
+                        messages: conversationHistory
                     })
                 });
 
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
                 const data = await response.json();
-                
-                // 提取回答
-                const assistantReply = data.choices[0].message.content;
-                // 4. 将大模型的回答也加入记忆
+                const assistantReply = data.choices?.[0]?.message?.content;
+
+                if (!assistantReply) {
+                    throw new Error('大模型返回内容为空');
+                }
+
                 conversationHistory.push({ role: 'assistant', content: assistantReply });
-                
-                // 显示并朗读
+
                 addMessage('ai', assistantReply);
                 speakText(assistantReply);
-                
+
             } catch (error) {
                 console.error('请求大模型失败:', error);
-                const errorMsg = '抱歉，我的云端大脑似乎遇到了网络波动，请您再试一次。';
+
+                const errorMsg = '抱歉，我的云端大脑刚才有点卡顿，请您再试一次。';
                 addMessage('ai', errorMsg);
                 speakText(errorMsg);
-                
-                // 请求失败时，弹出刚才压入的用户消息，防止记忆错位
-                conversationHistory.pop();
+
+                if (
+                    conversationHistory.length > 0 &&
+                    conversationHistory[conversationHistory.length - 1].role === 'user'
+                ) {
+                    conversationHistory.pop();
+                }
+            } finally {
+                setGeneratingState(false);
             }
         }
-        
-        // Three.js 相关变量
-        let scene, camera, renderer, controls, clock, currentVrm;
-        let isSpeaking = false;
 
-        // 初始化语音识别
         function initSpeechRecognition() {
             if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                 recognition = new SpeechRecognition();
+
                 recognition.lang = 'zh-CN';
-                // ⚠️ 极其关键：必须是 false！关闭连续识别，说完立刻出结果，防止 Chrome 死锁
                 recognition.continuous = false;
-                // 关闭临时结果，减轻网络负担
                 recognition.interimResults = false;
 
                 recognition.onresult = function(event) {
-                    let transcript = event.results[0][0].transcript;
+                    if (isSpeakingLocked || isSpeaking || window.speechSynthesis.speaking) {
+                        console.warn('忽略了一段可能来自数字人自身朗读的语音');
+                        return;
+                    }
+
+                    const transcript = event.results[0][0].transcript.trim();
+
                     if (transcript) {
-                        console.log("识别到语音:", transcript);
+                        console.log('识别到语音:', transcript);
                         addMessage('user', transcript);
                         sendToLLM(transcript);
                     }
                 };
 
                 recognition.onstart = function() {
-                    console.log("麦克风已成功激活！");
+                    console.log('麦克风已成功激活！');
+                    isRecording = true;
                     window.isActuallyRecording = true;
-                    document.getElementById('status-tip').textContent = '正在聆听...';
-                    document.getElementById('btn-speak').classList.add('recording');
+
+                    const statusTip = document.getElementById('status-tip');
+                    const btnSpeak = document.getElementById('btn-speak');
+
+                    if (statusTip) statusTip.textContent = '正在聆听...';
+                    if (btnSpeak) btnSpeak.classList.add('recording');
                 };
 
                 recognition.onend = function() {
                     isRecording = false;
                     window.isActuallyRecording = false;
-                    document.getElementById('status-tip').textContent = '等待语音输入...';
-                    document.getElementById('btn-speak').classList.remove('recording');
+
+                    const statusTip = document.getElementById('status-tip');
+                    const btnSpeak = document.getElementById('btn-speak');
+
+                    if (btnSpeak) btnSpeak.classList.remove('recording');
+
+                    if (!isGenerating && !isSpeakingLocked && !isSpeaking && statusTip) {
+                        statusTip.textContent = '等待语音输入...';
+                    }
                 };
 
                 recognition.onerror = function(event) {
                     console.error('语音识别被拦截，原因:', event.error);
+
                     isRecording = false;
                     window.isActuallyRecording = false;
-                    
-                    // 把错误原因直接显示在网页上，方便排查
+
                     let errorTip = '未听到声音，请重试';
-                    if(event.error === 'not-allowed') errorTip = '❌ 麦克风权限被拒绝！请在浏览器地址栏允许';
-                    if(event.error === 'network') errorTip = '❌ 网络连接失败(请尝试关闭/切换代理模式)';
-                    if(event.error === 'no-speech') errorTip = '没听到声音哦，请大声点';
-                    
-                    document.getElementById('status-tip').textContent = errorTip;
-                    document.getElementById('btn-speak').classList.remove('recording');
+                    if (event.error === 'not-allowed') errorTip = '❌ 麦克风权限被拒绝！请在浏览器地址栏允许';
+                    if (event.error === 'network') errorTip = '❌ 网络连接失败，请尝试关闭或切换代理模式';
+                    if (event.error === 'no-speech') errorTip = '没听到声音哦，请大声点';
+
+                    const statusTip = document.getElementById('status-tip');
+                    const btnSpeak = document.getElementById('btn-speak');
+
+                    if (statusTip) statusTip.textContent = errorTip;
+                    if (btnSpeak) btnSpeak.classList.remove('recording');
                 };
+
             } else {
                 console.error('您的浏览器不支持语音识别功能');
-                document.getElementById('status-tip').textContent = '当前浏览器不支持语音识别';
-            }
-        }
 
-        // 初始化语音合成
-        function speakText(text) {
-            if ('speechSynthesis' in window) {
-                // 核心修复：每次说话前，强制中断当前正在播放的语音并清空队列
-                window.speechSynthesis.cancel();
-                // 【新增核心代码】：强制唤醒可能因为浏览器静音策略而卡死的引擎
-                window.speechSynthesis.resume();
-
-                const utterance = new SpeechSynthesisUtterance(text);
-                // 强制压低音调，增强男性特征
-                utterance.pitch = 0.7;
-                utterance.rate = 1.0;
-
-                // 将匹配和播放逻辑封装，以应对异步加载
-                const setVoiceAndSpeak = () => {
-                    const voices = window.speechSynthesis.getVoices();
-                    
-                    // 【排错雷达】打印可用声音
-                    const zhVoices = voices.filter(v => v.lang.includes('zh'));
-                    console.log("🔍 当前浏览器支持的中文声音库：", zhVoices.map(v => v.name));
-                    
-                    // ⚠️ 终极无敌男声匹配（同时匹配拼音和中文汉字）
-                    let maleVoice = 
-                        // 1. 绝对首选：云扬 (顶级播音腔)
-                        voices.find(v => v.name.includes('Yunyang') || v.name.includes('云扬')) || 
-                        // 2. 备选：云希、晓聪、云枫 (其他顶级男声)
-                        voices.find(v => v.name.includes('Yunxi') || v.name.includes('云希') || v.name.includes('Xiaocong') || v.name.includes('晓聪') || v.name.includes('Yunfeng') || v.name.includes('云枫')) || 
-                        // 3. 兜底：康康
-                        voices.find(v => v.name.includes('Kangkang') || v.name.includes('康康')) || 
-                        // 4. 通用男声
-                        voices.find(v => v.lang.includes('zh') && (v.name.includes('Male') || v.name.includes('男')));
-
-                    // 兜底方案：避开常见女声
-                    if (!maleVoice) {
-                        maleVoice = voices.find(v => v.lang.includes('zh') && !v.name.includes('Huihui') && !v.name.includes('Yaoyao') && !v.name.includes('Xiaoxiao') && !v.name.includes('慧慧') && !v.name.includes('晓晓'))
-                                    || voices.find(v => v.lang.includes('zh'));
-                        utterance.pitch = 0.5; // 如果被迫用女声，降调伪装
-                    } else {
-                        utterance.pitch = 0.7; // 标准男声最自然的低沉音调
-                    }
-
-                    if (maleVoice) {
-                        utterance.voice = maleVoice;
-                        console.log("🎯 最终成功锁定的发声引擎：", maleVoice.name);
-                    }
-
-                    utterance.onstart = function() {
-                        isSpeaking = true;
-                    };
-
-                    utterance.onend = function() {
-                        isSpeaking = false;
-                        // 语音结束时确保嘴巴闭合
-                        if (currentVrm && currentVrm.expressionManager) {
-                            currentVrm.expressionManager.setValue('aa', 0);
-                            currentVrm.expressionManager.update();
-                        }
-                    };
-
-                    window.speechSynthesis.speak(utterance);
-                };
-
-                // 解决浏览器异步加载语音包的 Bug
-                if (window.speechSynthesis.getVoices().length === 0) {
-                    window.speechSynthesis.onvoiceschanged = () => {
-                        setVoiceAndSpeak();
-                        // 触发一次后解绑，防止重复触发
-                        window.speechSynthesis.onvoiceschanged = null;
-                    };
-                } else {
-                    setVoiceAndSpeak();
+                const statusTip = document.getElementById('status-tip');
+                if (statusTip) {
+                    statusTip.textContent = '当前浏览器不支持语音识别，可使用文字输入';
                 }
             }
         }
 
-        // 添加消息到聊天窗口
+        function stopRecognitionSafely() {
+            if (!recognition) return;
+
+            try {
+                if (isRecording || window.isActuallyRecording) {
+                    recognition.stop();
+                }
+            } catch (err) {
+                console.warn('停止语音识别失败:', err);
+            }
+
+            isRecording = false;
+            window.isActuallyRecording = false;
+
+            const btnSpeak = document.getElementById('btn-speak');
+            if (btnSpeak) {
+                btnSpeak.classList.remove('recording');
+            }
+        }
+
+        function speakText(text) {
+            if (!('speechSynthesis' in window)) return;
+
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.resume();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.pitch = 0.7;
+            utterance.rate = 1.0;
+
+            const setVoiceAndSpeak = () => {
+                const voices = window.speechSynthesis.getVoices();
+                const zhVoices = voices.filter(v => v.lang.includes('zh'));
+
+                console.log('🔍 当前浏览器支持的中文声音库：', zhVoices.map(v => v.name));
+
+                let maleVoice =
+                    voices.find(v => v.name.includes('Yunyang') || v.name.includes('云扬')) ||
+                    voices.find(v => v.name.includes('Yunxi') || v.name.includes('云希') || v.name.includes('Xiaocong') || v.name.includes('晓聪') || v.name.includes('Yunfeng') || v.name.includes('云枫')) ||
+                    voices.find(v => v.name.includes('Kangkang') || v.name.includes('康康')) ||
+                    voices.find(v => v.lang.includes('zh') && (v.name.includes('Male') || v.name.includes('男')));
+
+                if (!maleVoice) {
+                    maleVoice =
+                        voices.find(v =>
+                            v.lang.includes('zh') &&
+                            !v.name.includes('Huihui') &&
+                            !v.name.includes('Yaoyao') &&
+                            !v.name.includes('Xiaoxiao') &&
+                            !v.name.includes('慧慧') &&
+                            !v.name.includes('晓晓')
+                        ) ||
+                        voices.find(v => v.lang.includes('zh'));
+
+                    utterance.pitch = 0.5;
+                } else {
+                    utterance.pitch = 0.7;
+                }
+
+                if (maleVoice) {
+                    utterance.voice = maleVoice;
+                    console.log('🎯 最终成功锁定的发声引擎：', maleVoice.name);
+                }
+
+                utterance.onstart = function() {
+                    isSpeaking = true;
+                    isSpeakingLocked = true;
+
+                    stopRecognitionSafely();
+
+                    const statusTip = document.getElementById('status-tip');
+                    const btnSpeak = document.getElementById('btn-speak');
+                    const btnRead = document.getElementById('btn-read');
+
+                    if (statusTip) statusTip.textContent = '红七七正在讲解中...';
+
+                    setButtonDisabled(btnSpeak, true);
+                    setButtonDisabled(btnRead, true);
+                    setTextInputDisabled(true);
+                };
+
+                utterance.onend = function() {
+                    isSpeaking = false;
+
+                    if (currentVrm && currentVrm.expressionManager) {
+                        currentVrm.expressionManager.setValue('aa', 0);
+                        currentVrm.expressionManager.update();
+                    }
+
+                    setTimeout(() => {
+                        isSpeakingLocked = false;
+
+                        const statusTip = document.getElementById('status-tip');
+                        const btnSpeak = document.getElementById('btn-speak');
+                        const btnRead = document.getElementById('btn-read');
+
+                        if (!isGenerating) {
+                            if (statusTip) statusTip.textContent = '等待语音输入...';
+                            setButtonDisabled(btnSpeak, false);
+                            setButtonDisabled(btnRead, false);
+                            setTextInputDisabled(false);
+                        }
+                    }, 500);
+                };
+
+                utterance.onerror = function(event) {
+                    console.error('语音合成失败:', event.error);
+
+                    isSpeaking = false;
+                    isSpeakingLocked = false;
+
+                    const statusTip = document.getElementById('status-tip');
+                    const btnSpeak = document.getElementById('btn-speak');
+                    const btnRead = document.getElementById('btn-read');
+
+                    if (!isGenerating) {
+                        if (statusTip) statusTip.textContent = '等待语音输入...';
+                        setButtonDisabled(btnSpeak, false);
+                        setButtonDisabled(btnRead, false);
+                        setTextInputDisabled(false);
+                    }
+
+                    if (currentVrm && currentVrm.expressionManager) {
+                        currentVrm.expressionManager.setValue('aa', 0);
+                        currentVrm.expressionManager.update();
+                    }
+                };
+
+                window.speechSynthesis.speak(utterance);
+            };
+
+            if (window.speechSynthesis.getVoices().length === 0) {
+                window.speechSynthesis.onvoiceschanged = () => {
+                    setVoiceAndSpeak();
+                    window.speechSynthesis.onvoiceschanged = null;
+                };
+            } else {
+                setVoiceAndSpeak();
+            }
+        }
+
         function addMessage(type, content) {
             const chatWindow = document.getElementById('chat-window');
+
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${type}-msg`;
-            messageDiv.innerHTML = `<div class="msg-content">${content}</div>`;
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'msg-content';
+            contentDiv.textContent = content;
+
+            messageDiv.appendChild(contentDiv);
             chatWindow.appendChild(messageDiv);
             chatWindow.scrollTop = chatWindow.scrollHeight;
 
@@ -607,93 +799,131 @@
             }
         }
 
-        // 初始化语音识别
+        function submitTextInput() {
+            if (isGenerating || isSpeakingLocked || isSpeaking || window.speechSynthesis.speaking) {
+                return;
+            }
+
+            const input = document.getElementById('text-input');
+            const statusTip = document.getElementById('status-tip');
+
+            if (!input) return;
+
+            const text = input.value.trim();
+
+            if (!text) {
+                if (statusTip) statusTip.textContent = '请输入想问红七七的问题';
+                return;
+            }
+
+            input.value = '';
+
+            stopRecognitionSafely();
+
+            addMessage('user', text);
+            sendToLLM(text);
+        }
+
         initSpeechRecognition();
 
         const btnSpeak = document.getElementById('btn-speak');
         const btnRead = document.getElementById('btn-read');
+        const textInput = document.getElementById('text-input');
+        const btnSendText = document.getElementById('btn-send-text');
 
-        // 统一处理：点击切换录音状态 (Click to Talk)
         function toggleRecord(e) {
-            if (e.cancelable) e.preventDefault();
-            
-            // 1. 任何时候点击，先打断正在播放的语音
-            if (window.speechSynthesis.speaking) {
-                window.speechSynthesis.cancel();
+            if (isGenerating || isSpeakingLocked || isSpeaking || window.speechSynthesis.speaking) {
+                return;
             }
-            isSpeaking = false;
 
+            if (e.cancelable) e.preventDefault();
             if (!recognition) return;
 
             if (isRecording) {
-                // 如果正在录音，再次点击则手动停止
                 try {
                     recognition.stop();
                 } catch (err) {
-                    console.warn("停止异常:", err);
+                    console.warn('停止异常:', err);
                 }
             } else {
-                // 如果没有录音，则开启。加入 50ms 延迟，防止与 cancel() 发生底层线程撞车
                 setTimeout(() => {
-                    isRecording = true;
+                    if (isGenerating || isSpeakingLocked || isSpeaking || window.speechSynthesis.speaking) return;
+
                     try {
                         recognition.start();
                     } catch (err) {
-                        console.warn("启动异常:", err);
+                        console.warn('启动异常:', err);
                         isRecording = false;
+                        window.isActuallyRecording = false;
                     }
                 }, 50);
             }
         }
 
-        // 1. 只保留极其安全的 click 事件
-        btnSpeak.addEventListener('click', toggleRecord);
+        if (btnSpeak) {
+            btnSpeak.addEventListener('click', toggleRecord);
+        }
 
-        // 2. 重新朗读按钮事件保持不变
-        btnRead.addEventListener('click', function(e) {
-            if (e.cancelable) e.preventDefault();
-            speakText(lastMessage);
-        });
+        if (btnRead) {
+            btnRead.addEventListener('click', function(e) {
+                if (isGenerating || isSpeakingLocked || isSpeaking || window.speechSynthesis.speaking) {
+                    return;
+                }
 
-        // 初始化 Three.js 场景
+                if (e.cancelable) e.preventDefault();
+                speakText(lastMessage);
+            });
+        }
+
+        if (btnSendText) {
+            btnSendText.addEventListener('click', submitTextInput);
+        }
+
+        if (textInput) {
+            textInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    submitTextInput();
+                }
+            });
+        }
+
         function initThreeJS() {
-            // 获取容器元素
             const container = document.getElementById('canvas-container');
-            // 清空容器内部的占位文本
             container.innerHTML = '';
 
-            // 创建场景
             scene = new THREE.Scene();
 
-            // 加载并应用 HDR 全景背景
             const rgbeLoader = new RGBELoader();
             rgbeLoader.load('./museum.hdr?timestamp=' + Date.now(), (texture) => {
                 texture.mapping = THREE.EquirectangularReflectionMapping;
                 scene.background = texture;
-                scene.environment = texture; // 核心！让讲解员衣服反射真实光线
-                console.log("HDR 沉浸式背景加载成功！");
+                scene.environment = texture;
+                console.log('HDR 沉浸式背景加载成功！');
             });
 
-            // 创建相机
-            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera = new THREE.PerspectiveCamera(
+                75,
+                container.clientWidth / container.clientHeight,
+                0.1,
+                1000
+            );
             camera.position.set(0, 1.0, 2.0);
 
-            // 创建渲染器，开启 alpha 通道以实现背景透明
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: true
+            });
             renderer.setSize(container.clientWidth, container.clientHeight);
-            // 将渲染器挂载到容器中
             container.appendChild(renderer.domElement);
 
-            // 电影级调色，防止画面过曝
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
             renderer.toneMappingExposure = 1.0;
 
-            // 添加 OrbitControls
             controls = new OrbitControls(camera, renderer.domElement);
             controls.target.set(0, 1.0, 0);
             controls.update();
 
-            // 添加灯光
             const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
             scene.add(ambientLight);
 
@@ -705,91 +935,93 @@
             directionalLight2.position.set(5, 10, 5);
             scene.add(directionalLight2);
 
-            // 初始化时钟
             clock = new THREE.Clock();
 
-            // 加载 VRM 模型
             const loader = new GLTFLoader();
             loader.register((parser) => new VRMLoaderPlugin(parser));
-            
+
             loader.load(
                 'guide.vrm?timestamp=' + Date.now(),
                 (gltf) => {
                     const vrm = gltf.userData.vrm;
-                    
-                    // 调整模型位置和缩放
+
                     vrm.scene.position.y = -1.5;
                     vrm.scene.scale.set(0.8, 0.8, 0.8);
-                    
-                    // 让模型正对前方，并放下双臂
                     vrm.scene.rotation.y = 0;
+
                     const leftArm = vrm.humanoid.getNormalizedBoneNode('leftUpperArm');
                     const rightArm = vrm.humanoid.getNormalizedBoneNode('rightUpperArm');
+
                     if (leftArm) leftArm.rotation.z = -1.2;
                     if (rightArm) rightArm.rotation.z = 1.2;
-                    
-                    vrm.scene.position.set(0, 0, 12); // 恢复旧代码中的深度位置
 
-                    // 终极对焦：获取模型真实“头部骨骼”的世界坐标
+                    vrm.scene.position.set(0, 0, 12);
+
                     const headNode = vrm.humanoid.getNormalizedBoneNode('head');
-                    const headPos = new THREE.Vector3(0, 1.5, 0); // 兜底坐标
+                    const headPos = new THREE.Vector3(0, 1.5, 0);
+
                     if (headNode) {
                         headNode.getWorldPosition(headPos);
                     }
 
-                    // 将相机摆在头部的正前方 0.8 米处
                     camera.position.set(headPos.x, headPos.y, headPos.z + 0.8);
 
-                    // 将准星死死锁住人物的下巴/脖子区域 (头部坐标往下移0.2)
-                    const targetPos = new THREE.Vector3(headPos.x, headPos.y - 0.2, headPos.z);
+                    const targetPos = new THREE.Vector3(
+                        headPos.x,
+                        headPos.y - 0.2,
+                        headPos.z
+                    );
+
                     camera.lookAt(targetPos);
-                    if (typeof controls !== 'undefined') {
+
+                    if (controls) {
                         controls.target.copy(targetPos);
                         controls.update();
                     }
-                    
+
                     currentVrm = vrm;
                     scene.add(vrm.scene);
-                    
+
                     console.log('VRM 模型加载成功');
                 },
-                (progress) => console.log('加载进度: ' + (progress.loaded / progress.total * 100) + '%'),
+                (progress) => {
+                    if (progress.total) {
+                        console.log('加载进度: ' + (progress.loaded / progress.total * 100) + '%');
+                    }
+                },
                 (error) => console.error('VRM 模型加载失败:', error)
             );
 
             function animate() {
                 requestAnimationFrame(animate);
+
                 const deltaTime = clock.getDelta();
-                
+
                 if (controls) controls.update();
                 if (currentVrm) currentVrm.update(deltaTime);
-                
-                // 自动眨眼逻辑
+
                 if (currentVrm && currentVrm.expressionManager) {
                     const blinkValue = Math.max(0, Math.sin(Date.now() * 0.002) - 0.9) * 10;
                     currentVrm.expressionManager.setValue('blink', Math.min(1, blinkValue));
                 }
-                
+
                 if (currentVrm && currentVrm.expressionManager) {
                     const time = Date.now() * 0.001;
-                    
-                    // 全局呼吸感
+
                     const spine = currentVrm.humanoid.getNormalizedBoneNode('spine');
                     if (spine) spine.rotation.x = Math.sin(time * 2.0) * 0.02;
-                    
-                    // 平滑权重 (缓动算法)
+
                     if (typeof window.speakWeight === 'undefined') window.speakWeight = 0;
+
                     if (isSpeaking) {
                         window.speakWeight += (1.0 - window.speakWeight) * 0.06;
                     } else {
                         window.speakWeight += (0.0 - window.speakWeight) * 0.06;
                     }
 
-                    // 嘴型控制
                     const mouthOpenness = isSpeaking ? Math.abs(Math.sin(time * 8.0)) * 0.6 : 0;
                     currentVrm.expressionManager.setValue('aa', mouthOpenness);
 
-                    // 肢体手势生成
                     const rightUpper = currentVrm.humanoid.getNormalizedBoneNode('rightUpperArm');
                     const rightLower = currentVrm.humanoid.getNormalizedBoneNode('rightLowerArm');
                     const leftUpper = currentVrm.humanoid.getNormalizedBoneNode('leftUpperArm');
@@ -797,40 +1029,70 @@
                     const head = currentVrm.humanoid.getNormalizedBoneNode('head');
 
                     if (typeof window.gestureState === 'undefined') {
-                        window.gestureState = 0; 
+                        window.gestureState = 0;
                         window.gestureTimer = 0;
-                        window.curRU_Z = 1.2; window.curRU_X = 0; window.curRL_Z = 0; window.curRL_X = 0;
-                        window.curLU_Z = -1.2; window.curLU_X = 0; window.curLL_Z = 0; window.curLL_X = 0;
+
+                        window.curRU_Z = 1.2;
+                        window.curRU_X = 0;
+                        window.curRL_Z = 0;
+                        window.curRL_X = 0;
+
+                        window.curLU_Z = -1.2;
+                        window.curLU_X = 0;
+                        window.curLL_Z = 0;
+                        window.curLL_X = 0;
                     }
 
                     if (isSpeaking) {
                         window.gestureTimer -= deltaTime;
+
                         if (window.gestureTimer <= 0) {
-                            window.gestureState = Math.floor(Math.random() * 3) + 1; 
-                            window.gestureTimer = 2.0 + Math.random() * 2.0; 
+                            window.gestureState = Math.floor(Math.random() * 3) + 1;
+                            window.gestureTimer = 2.0 + Math.random() * 2.0;
                         }
                     } else {
-                        window.gestureState = 0; 
+                        window.gestureState = 0;
                     }
 
-                    let tarRU_Z = 1.2, tarRU_X = 0, tarRL_Z = 0, tarRL_X = 0;
-                    let tarLU_Z = -1.2, tarLU_X = 0, tarLL_Z = 0, tarLL_X = 0;
+                    let tarRU_Z = 1.2;
+                    let tarRU_X = 0;
+                    let tarRL_Z = 0;
+                    let tarRL_X = 0;
 
-                    if (window.gestureState === 1) { 
-                        tarRU_Z = 1.05; tarRU_X = -0.3; tarRL_Z = 1.5; tarRL_X = -0.4;
-                    } else if (window.gestureState === 2) { 
-                        tarLU_Z = -1.05; tarLU_X = -0.3; tarLL_Z = -1.5; tarLL_X = -0.4;
-                    } else if (window.gestureState === 3) { 
-                        tarRU_Z = 1.1; tarRU_X = -0.2; tarRL_Z = 1.2; tarRL_X = -0.3;
-                        tarLU_Z = -1.1; tarLU_X = -0.2; tarLL_Z = -1.2; tarLL_X = -0.3;
+                    let tarLU_Z = -1.2;
+                    let tarLU_X = 0;
+                    let tarLL_Z = 0;
+                    let tarLL_X = 0;
+
+                    if (window.gestureState === 1) {
+                        tarRU_Z = 1.05;
+                        tarRU_X = -0.3;
+                        tarRL_Z = 1.5;
+                        tarRL_X = -0.4;
+                    } else if (window.gestureState === 2) {
+                        tarLU_Z = -1.05;
+                        tarLU_X = -0.3;
+                        tarLL_Z = -1.5;
+                        tarLL_X = -0.4;
+                    } else if (window.gestureState === 3) {
+                        tarRU_Z = 1.1;
+                        tarRU_X = -0.2;
+                        tarRL_Z = 1.2;
+                        tarRL_X = -0.3;
+
+                        tarLU_Z = -1.1;
+                        tarLU_X = -0.2;
+                        tarLL_Z = -1.2;
+                        tarLL_X = -0.3;
                     }
 
                     const lerpSpeed = 4.0 * deltaTime;
+
                     window.curRU_Z += (tarRU_Z - window.curRU_Z) * lerpSpeed;
                     window.curRU_X += (tarRU_X - window.curRU_X) * lerpSpeed;
                     window.curRL_Z += (tarRL_Z - window.curRL_Z) * lerpSpeed;
                     window.curRL_X += (tarRL_X - window.curRL_X) * lerpSpeed;
-                    
+
                     window.curLU_Z += (tarLU_Z - window.curLU_Z) * lerpSpeed;
                     window.curLU_X += (tarLU_X - window.curLU_X) * lerpSpeed;
                     window.curLL_Z += (tarLL_Z - window.curLL_Z) * lerpSpeed;
@@ -852,38 +1114,42 @@
                     }
 
                     if (head) {
-                        const targetHeadY = window.gestureState === 1 ? -0.08 : (window.gestureState === 2 ? 0.08 : 0);
+                        const targetHeadY =
+                            window.gestureState === 1
+                                ? -0.08
+                                : window.gestureState === 2
+                                    ? 0.08
+                                    : 0;
+
                         head.rotation.y += (targetHeadY - head.rotation.y) * lerpSpeed;
-                        head.rotation.x = (Math.sin(time * 4.0) * 0.02) * window.speakWeight;
+                        head.rotation.x = Math.sin(time * 4.0) * 0.02 * window.speakWeight;
                     }
-                    
+
                     currentVrm.expressionManager.update();
                 }
-                
+
                 renderer.render(scene, camera);
             }
 
             window.addEventListener('resize', function() {
                 const width = container.clientWidth;
                 const height = container.clientHeight;
-                
+
                 camera.aspect = width / height;
                 camera.updateProjectionMatrix();
-                
+
                 renderer.setSize(width, height);
             });
 
             animate();
         }
 
-        // 模拟大模型开场引导 (修复浏览器自动播放静音限制)
         setTimeout(() => {
-            const welcomeText = '作为你的专属向导，我已经准备好啦！想听听那些热血沸腾的革命故事，还是了解哪位英雄的传奇人生？\n\n';
+            const welcomeText = '作为你的专属向导，我已经准备好啦！想听听那些热血沸腾的革命故事，还是了解哪位英雄的传奇人生？';
             addMessage('ai', welcomeText);
             lastMessage = welcomeText;
         }, 2000);
 
-        // 启动 3D 场景渲染
         initThreeJS();
     </script>
 </body>
