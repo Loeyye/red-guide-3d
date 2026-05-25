@@ -91,12 +91,34 @@
 
         .status-badge {
             padding: 8px 16px;
-            background: linear-gradient(135deg, var(--accent-gold), #f4d03f);
             color: #2c3e50;
             border-radius: 20px;
             font-size: 14px;
             font-weight: 500;
             box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .status-badge.status-idle {
+            background: linear-gradient(135deg, #f0ebe1, #ffffff);
+            color: var(--text-main);
+        }
+
+        .status-badge.status-checking {
+            background: linear-gradient(135deg, #f39c12, #f7dc6f);
+            color: #2c3e50;
+        }
+
+        .status-badge.status-normal {
+            background: linear-gradient(135deg, var(--accent-gold), #f4d03f);
+            color: #2c3e50;
+        }
+
+        .status-badge.status-error {
+            background: linear-gradient(135deg, var(--danger-red), #e74c3c);
+            color: white;
+            box-shadow: 0 4px 12px rgba(192, 57, 43, 0.3);
         }
 
         .main-content {
@@ -148,18 +170,9 @@
         }
 
         @keyframes pulse {
-            0% {
-                transform: scale(1);
-                opacity: 1;
-            }
-            50% {
-                transform: scale(1.2);
-                opacity: 0.7;
-            }
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
         }
 
         .interaction-section {
@@ -313,18 +326,9 @@
         }
 
         @keyframes recordPulse {
-            0% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.7);
-            }
-            50% {
-                transform: scale(1.02);
-                box-shadow: 0 0 0 10px rgba(192, 57, 43, 0);
-            }
-            100% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(192, 57, 43, 0);
-            }
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.7); }
+            50% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(192, 57, 43, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(192, 57, 43, 0); }
         }
 
         .icon {
@@ -384,7 +388,7 @@
                 <span class="divider">|</span>
                 <span class="subtitle">人工智能驱动红色叙事的沉浸式传播实践</span>
             </div>
-            <div class="status-badge">GLM-4 大脑接入正常</div>
+            <div class="status-badge status-idle" id="brain-status">云端大脑待连接</div>
         </header>
 
         <main class="main-content">
@@ -450,6 +454,7 @@
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
         let isRecording = false;
+        let isStartingRecognition = false;
         let isGenerating = false;
         let isSpeakingLocked = false;
         let recognition = null;
@@ -458,6 +463,25 @@
 
         let scene, camera, renderer, controls, clock, currentVrm;
         let isSpeaking = false;
+
+        function updateBrainStatus(type, text) {
+            const badge = document.getElementById('brain-status');
+            if (!badge) return;
+
+            badge.classList.remove('status-idle', 'status-checking', 'status-normal', 'status-error');
+
+            if (type === 'checking') {
+                badge.classList.add('status-checking');
+            } else if (type === 'normal') {
+                badge.classList.add('status-normal');
+            } else if (type === 'error') {
+                badge.classList.add('status-error');
+            } else {
+                badge.classList.add('status-idle');
+            }
+
+            badge.textContent = text;
+        }
 
         function setButtonDisabled(button, disabled) {
             if (!button) return;
@@ -483,6 +507,21 @@
             }
         }
 
+        function restoreIdleControlsIfSafe() {
+            if (isGenerating || isSpeakingLocked || isSpeaking || window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+                return;
+            }
+
+            const statusTip = document.getElementById('status-tip');
+            const btnSpeak = document.getElementById('btn-speak');
+            const btnRead = document.getElementById('btn-read');
+
+            if (statusTip) statusTip.textContent = '等待语音输入...';
+            setButtonDisabled(btnSpeak, false);
+            setButtonDisabled(btnRead, false);
+            setTextInputDisabled(false);
+        }
+
         function setGeneratingState(generating) {
             isGenerating = generating;
 
@@ -496,12 +535,7 @@
                 setButtonDisabled(btnRead, true);
                 setTextInputDisabled(true);
             } else {
-                if (!isSpeakingLocked && !isSpeaking && !window.speechSynthesis.speaking) {
-                    if (statusTip) statusTip.textContent = '等待语音输入...';
-                    setButtonDisabled(btnSpeak, false);
-                    setButtonDisabled(btnRead, false);
-                    setTextInputDisabled(false);
-                }
+                restoreIdleControlsIfSafe();
             }
         }
 
@@ -509,6 +543,9 @@
             if (isGenerating) return;
 
             setGeneratingState(true);
+            updateBrainStatus('checking', '云端大脑连接中...');
+
+            let shouldRestoreAfterRequest = true;
 
             try {
                 conversationHistory.push({ role: 'user', content: userInput });
@@ -527,28 +564,38 @@
                     })
                 });
 
+                const data = await response.json().catch(() => null);
+
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const detail = data?.detail || data?.error || `HTTP error! status: ${response.status}`;
+                    throw new Error(detail);
                 }
 
-                const data = await response.json();
-                const assistantReply = data.choices?.[0]?.message?.content;
+                const assistantReply = data?.choices?.[0]?.message?.content;
 
                 if (!assistantReply) {
                     throw new Error('大模型返回内容为空');
                 }
 
+                updateBrainStatus('normal', 'GLM-4 大脑接入正常');
+
                 conversationHistory.push({ role: 'assistant', content: assistantReply });
 
                 addMessage('ai', assistantReply);
-                speakText(assistantReply);
+
+                const speechStarted = speakText(assistantReply);
+                shouldRestoreAfterRequest = !speechStarted;
 
             } catch (error) {
                 console.error('请求大模型失败:', error);
 
+                updateBrainStatus('error', '云端连接异常');
+
                 const errorMsg = '抱歉，我的云端大脑刚才有点卡顿，请您再试一次。';
                 addMessage('ai', errorMsg);
-                speakText(errorMsg);
+
+                const speechStarted = speakText(errorMsg);
+                shouldRestoreAfterRequest = !speechStarted;
 
                 if (
                     conversationHistory.length > 0 &&
@@ -557,7 +604,11 @@
                     conversationHistory.pop();
                 }
             } finally {
-                setGeneratingState(false);
+                isGenerating = false;
+
+                if (shouldRestoreAfterRequest) {
+                    restoreIdleControlsIfSafe();
+                }
             }
         }
 
@@ -587,6 +638,8 @@
 
                 recognition.onstart = function() {
                     console.log('麦克风已成功激活！');
+
+                    isStartingRecognition = false;
                     isRecording = true;
                     window.isActuallyRecording = true;
 
@@ -598,22 +651,20 @@
                 };
 
                 recognition.onend = function() {
+                    isStartingRecognition = false;
                     isRecording = false;
                     window.isActuallyRecording = false;
 
-                    const statusTip = document.getElementById('status-tip');
                     const btnSpeak = document.getElementById('btn-speak');
-
                     if (btnSpeak) btnSpeak.classList.remove('recording');
 
-                    if (!isGenerating && !isSpeakingLocked && !isSpeaking && statusTip) {
-                        statusTip.textContent = '等待语音输入...';
-                    }
+                    restoreIdleControlsIfSafe();
                 };
 
                 recognition.onerror = function(event) {
                     console.error('语音识别被拦截，原因:', event.error);
 
+                    isStartingRecognition = false;
                     isRecording = false;
                     window.isActuallyRecording = false;
 
@@ -627,6 +678,8 @@
 
                     if (statusTip) statusTip.textContent = errorTip;
                     if (btnSpeak) btnSpeak.classList.remove('recording');
+
+                    restoreIdleControlsIfSafe();
                 };
 
             } else {
@@ -643,13 +696,14 @@
             if (!recognition) return;
 
             try {
-                if (isRecording || window.isActuallyRecording) {
+                if (isRecording || isStartingRecognition || window.isActuallyRecording) {
                     recognition.stop();
                 }
             } catch (err) {
                 console.warn('停止语音识别失败:', err);
             }
 
+            isStartingRecognition = false;
             isRecording = false;
             window.isActuallyRecording = false;
 
@@ -660,124 +714,163 @@
         }
 
         function speakText(text) {
-            if (!('speechSynthesis' in window)) return;
+            if (!('speechSynthesis' in window)) {
+                const statusTip = document.getElementById('status-tip');
+                if (statusTip) statusTip.textContent = '当前浏览器不支持语音朗读';
+                return false;
+            }
+
+            const content = String(text || '').trim();
+
+            if (!content) {
+                const statusTip = document.getElementById('status-tip');
+                if (statusTip) statusTip.textContent = '没有可朗读的内容';
+                return false;
+            }
+
+            const statusTip = document.getElementById('status-tip');
+            const btnSpeak = document.getElementById('btn-speak');
+            const btnRead = document.getElementById('btn-read');
 
             window.speechSynthesis.cancel();
             window.speechSynthesis.resume();
 
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.pitch = 0.7;
+            isSpeakingLocked = true;
+            isSpeaking = false;
+
+            if (statusTip) statusTip.textContent = '红七七正在准备讲解...';
+            setButtonDisabled(btnSpeak, true);
+            setButtonDisabled(btnRead, true);
+            setTextInputDisabled(true);
+
+            const utterance = new SpeechSynthesisUtterance(content);
+            utterance.lang = 'zh-CN';
             utterance.rate = 1.0;
+            utterance.pitch = 0.8;
+            utterance.volume = 1.0;
 
-            const setVoiceAndSpeak = () => {
-                const voices = window.speechSynthesis.getVoices();
-                const zhVoices = voices.filter(v => v.lang.includes('zh'));
+            let hasStarted = false;
+            let hasFinished = false;
+            let keepAliveTimer = null;
 
-                console.log('🔍 当前浏览器支持的中文声音库：', zhVoices.map(v => v.name));
+            function restoreAfterSpeech() {
+                if (hasFinished) return;
+                hasFinished = true;
 
-                let maleVoice =
-                    voices.find(v => v.name.includes('Yunyang') || v.name.includes('云扬')) ||
-                    voices.find(v => v.name.includes('Yunxi') || v.name.includes('云希') || v.name.includes('Xiaocong') || v.name.includes('晓聪') || v.name.includes('Yunfeng') || v.name.includes('云枫')) ||
-                    voices.find(v => v.name.includes('Kangkang') || v.name.includes('康康')) ||
-                    voices.find(v => v.lang.includes('zh') && (v.name.includes('Male') || v.name.includes('男')));
+                isSpeaking = false;
 
-                if (!maleVoice) {
-                    maleVoice =
-                        voices.find(v =>
-                            v.lang.includes('zh') &&
-                            !v.name.includes('Huihui') &&
-                            !v.name.includes('Yaoyao') &&
-                            !v.name.includes('Xiaoxiao') &&
-                            !v.name.includes('慧慧') &&
-                            !v.name.includes('晓晓')
-                        ) ||
-                        voices.find(v => v.lang.includes('zh'));
-
-                    utterance.pitch = 0.5;
-                } else {
-                    utterance.pitch = 0.7;
+                if (keepAliveTimer) {
+                    clearInterval(keepAliveTimer);
+                    keepAliveTimer = null;
                 }
 
-                if (maleVoice) {
-                    utterance.voice = maleVoice;
-                    console.log('🎯 最终成功锁定的发声引擎：', maleVoice.name);
+                if (currentVrm && currentVrm.expressionManager) {
+                    currentVrm.expressionManager.setValue('aa', 0);
+                    currentVrm.expressionManager.update();
+                }
+
+                setTimeout(() => {
+                    isSpeakingLocked = false;
+                    restoreIdleControlsIfSafe();
+                }, 500);
+            }
+
+            function pickChineseVoice(voices) {
+                return (
+                    voices.find(v => v.name.includes('Yunyang') || v.name.includes('云扬')) ||
+                    voices.find(v => v.name.includes('Yunxi') || v.name.includes('云希')) ||
+                    voices.find(v => v.name.includes('Xiaocong') || v.name.includes('晓聪')) ||
+                    voices.find(v => v.name.includes('Yunfeng') || v.name.includes('云枫')) ||
+                    voices.find(v => v.name.includes('Kangkang') || v.name.includes('康康')) ||
+                    voices.find(v => v.lang && v.lang.toLowerCase().includes('zh') && (v.name.includes('Male') || v.name.includes('男'))) ||
+                    voices.find(v => v.lang && v.lang.toLowerCase().includes('zh')) ||
+                    voices[0]
+                );
+            }
+
+            function actuallySpeak() {
+                if (hasFinished) return;
+
+                const voices = window.speechSynthesis.getVoices();
+                console.log('🔍 当前浏览器可用语音：', voices.map(v => `${v.name} / ${v.lang}`));
+
+                const selectedVoice = pickChineseVoice(voices);
+
+                if (selectedVoice) {
+                    utterance.voice = selectedVoice;
+                    console.log('🎯 最终使用的语音：', selectedVoice.name, selectedVoice.lang);
+                } else {
+                    console.warn('没有拿到语音列表，尝试使用浏览器默认语音');
                 }
 
                 utterance.onstart = function() {
+                    hasStarted = true;
                     isSpeaking = true;
                     isSpeakingLocked = true;
 
                     stopRecognitionSafely();
 
-                    const statusTip = document.getElementById('status-tip');
-                    const btnSpeak = document.getElementById('btn-speak');
-                    const btnRead = document.getElementById('btn-read');
-
                     if (statusTip) statusTip.textContent = '红七七正在讲解中...';
-
                     setButtonDisabled(btnSpeak, true);
                     setButtonDisabled(btnRead, true);
                     setTextInputDisabled(true);
                 };
 
                 utterance.onend = function() {
-                    isSpeaking = false;
-
-                    if (currentVrm && currentVrm.expressionManager) {
-                        currentVrm.expressionManager.setValue('aa', 0);
-                        currentVrm.expressionManager.update();
-                    }
-
-                    setTimeout(() => {
-                        isSpeakingLocked = false;
-
-                        const statusTip = document.getElementById('status-tip');
-                        const btnSpeak = document.getElementById('btn-speak');
-                        const btnRead = document.getElementById('btn-read');
-
-                        if (!isGenerating) {
-                            if (statusTip) statusTip.textContent = '等待语音输入...';
-                            setButtonDisabled(btnSpeak, false);
-                            setButtonDisabled(btnRead, false);
-                            setTextInputDisabled(false);
-                        }
-                    }, 500);
+                    restoreAfterSpeech();
                 };
 
                 utterance.onerror = function(event) {
                     console.error('语音合成失败:', event.error);
-
-                    isSpeaking = false;
-                    isSpeakingLocked = false;
-
-                    const statusTip = document.getElementById('status-tip');
-                    const btnSpeak = document.getElementById('btn-speak');
-                    const btnRead = document.getElementById('btn-read');
-
-                    if (!isGenerating) {
-                        if (statusTip) statusTip.textContent = '等待语音输入...';
-                        setButtonDisabled(btnSpeak, false);
-                        setButtonDisabled(btnRead, false);
-                        setTextInputDisabled(false);
-                    }
-
-                    if (currentVrm && currentVrm.expressionManager) {
-                        currentVrm.expressionManager.setValue('aa', 0);
-                        currentVrm.expressionManager.update();
-                    }
+                    restoreAfterSpeech();
                 };
 
-                window.speechSynthesis.speak(utterance);
-            };
+                try {
+                    window.speechSynthesis.cancel();
+                    window.speechSynthesis.resume();
+                    window.speechSynthesis.speak(utterance);
 
-            if (window.speechSynthesis.getVoices().length === 0) {
-                window.speechSynthesis.onvoiceschanged = () => {
-                    setVoiceAndSpeak();
-                    window.speechSynthesis.onvoiceschanged = null;
-                };
-            } else {
-                setVoiceAndSpeak();
+                    keepAliveTimer = setInterval(() => {
+                        if (!hasFinished && window.speechSynthesis.paused) {
+                            window.speechSynthesis.resume();
+                        }
+                    }, 1000);
+
+                    setTimeout(() => {
+                        if (!hasStarted && !window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
+                            console.warn('语音没有成功启动，释放按钮状态');
+                            restoreAfterSpeech();
+                        }
+                    }, 1500);
+
+                } catch (error) {
+                    console.error('启动语音合成失败:', error);
+                    restoreAfterSpeech();
+                }
             }
+
+            const currentVoices = window.speechSynthesis.getVoices();
+
+            if (currentVoices.length > 0) {
+                actuallySpeak();
+            } else {
+                let alreadyTried = false;
+
+                const trySpeakOnce = () => {
+                    if (alreadyTried) return;
+                    alreadyTried = true;
+                    window.speechSynthesis.onvoiceschanged = null;
+                    actuallySpeak();
+                };
+
+                window.speechSynthesis.onvoiceschanged = trySpeakOnce;
+
+                setTimeout(() => {
+                    trySpeakOnce();
+                }, 300);
+            }
+
+            return true;
         }
 
         function addMessage(type, content) {
@@ -800,7 +893,7 @@
         }
 
         function submitTextInput() {
-            if (isGenerating || isSpeakingLocked || isSpeaking || window.speechSynthesis.speaking) {
+            if (isGenerating || isSpeakingLocked || isSpeaking || window.speechSynthesis.speaking || window.speechSynthesis.pending) {
                 return;
             }
 
@@ -832,32 +925,40 @@
         const btnSendText = document.getElementById('btn-send-text');
 
         function toggleRecord(e) {
-            if (isGenerating || isSpeakingLocked || isSpeaking || window.speechSynthesis.speaking) {
+            if (isGenerating || isSpeakingLocked || isSpeaking || window.speechSynthesis.speaking || window.speechSynthesis.pending) {
                 return;
             }
 
             if (e.cancelable) e.preventDefault();
             if (!recognition) return;
 
-            if (isRecording) {
-                try {
-                    recognition.stop();
-                } catch (err) {
-                    console.warn('停止异常:', err);
-                }
-            } else {
-                setTimeout(() => {
-                    if (isGenerating || isSpeakingLocked || isSpeaking || window.speechSynthesis.speaking) return;
-
-                    try {
-                        recognition.start();
-                    } catch (err) {
-                        console.warn('启动异常:', err);
-                        isRecording = false;
-                        window.isActuallyRecording = false;
-                    }
-                }, 50);
+            if (isRecording || isStartingRecognition) {
+                stopRecognitionSafely();
+                return;
             }
+
+            isStartingRecognition = true;
+
+            const statusTip = document.getElementById('status-tip');
+            if (statusTip) statusTip.textContent = '正在启动麦克风...';
+
+            setTimeout(() => {
+                if (isGenerating || isSpeakingLocked || isSpeaking || window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+                    isStartingRecognition = false;
+                    restoreIdleControlsIfSafe();
+                    return;
+                }
+
+                try {
+                    recognition.start();
+                } catch (err) {
+                    console.warn('启动异常:', err);
+                    isStartingRecognition = false;
+                    isRecording = false;
+                    window.isActuallyRecording = false;
+                    restoreIdleControlsIfSafe();
+                }
+            }, 50);
         }
 
         if (btnSpeak) {
@@ -866,7 +967,7 @@
 
         if (btnRead) {
             btnRead.addEventListener('click', function(e) {
-                if (isGenerating || isSpeakingLocked || isSpeaking || window.speechSynthesis.speaking) {
+                if (isGenerating || isSpeakingLocked || isSpeaking || window.speechSynthesis.speaking || window.speechSynthesis.pending) {
                     return;
                 }
 
@@ -895,12 +996,20 @@
             scene = new THREE.Scene();
 
             const rgbeLoader = new RGBELoader();
-            rgbeLoader.load('./museum.hdr?timestamp=' + Date.now(), (texture) => {
-                texture.mapping = THREE.EquirectangularReflectionMapping;
-                scene.background = texture;
-                scene.environment = texture;
-                console.log('HDR 沉浸式背景加载成功！');
-            });
+            rgbeLoader.load(
+                './museum.hdr?timestamp=' + Date.now(),
+                (texture) => {
+                    texture.mapping = THREE.EquirectangularReflectionMapping;
+                    scene.background = texture;
+                    scene.environment = texture;
+                    console.log('HDR 沉浸式背景加载成功！');
+                },
+                undefined,
+                (error) => {
+                    console.error('HDR 背景加载失败:', error);
+                    scene.background = new THREE.Color(0xf9f6f0);
+                }
+            );
 
             camera = new THREE.PerspectiveCamera(
                 75,
